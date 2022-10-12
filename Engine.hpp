@@ -18,8 +18,17 @@ namespace Engine {
         std::vector<glm::vec2> texCoords;
         std::vector<std::vector<uint32_t>> indicies;
     };
+    struct BufferData
+    {
+        GLuint vao;
+        GLuint vbo;
+        std::vector<GLuint> ibos;
+        GLuint vbo_size;
+        std::vector<GLuint> ibo_size;
+    };
     MeshData* readOBJ(std::string filename);
 
-    std::pair<GLuint, std::pair<GLuint, std::vector<GLuint>>> _getVao(MeshData meshes);
+    BufferData _getVao(MeshData meshes);
+    void drawObj(BufferData meshData, int idx);
 }
 #endif

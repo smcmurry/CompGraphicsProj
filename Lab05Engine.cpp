@@ -110,6 +110,7 @@ void Lab05Engine::handleCursorPositionEvent(glm::vec2 currMousePosition)
 
 void Lab05Engine::_setupGLFW()
 {
+    CSCI441::OpenGLEngine::_windowResizable = true;
     CSCI441::OpenGLEngine::_setupGLFW();
 
     // set our callbacks

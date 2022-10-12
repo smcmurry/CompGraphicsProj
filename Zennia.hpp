@@ -40,10 +40,9 @@ private:
 
     /// \desc handle of the shader program to use when drawing the Zennia
     GLuint _shaderProgramHandle;
-    std::pair<GLuint, std::pair<GLuint, std::vector<GLuint>>> meshData;
+    Engine::BufferData meshData;
     GLuint _VBO_SIZE;
     std::vector<GLuint> _IBO_SIZE;
-    void drawObj(int idx, glm::vec3 color);
     /// \desc stores the uniform locations needed for the plan information
     struct ShaderProgramUniformLocations {
         /// \desc location of the precomputed ModelViewProjection matrix

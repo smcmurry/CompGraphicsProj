@@ -5,12 +5,15 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <CSCI441/OpenGLEngine.hpp>
+#include <CSCI441/objects.hpp>
+#include <CSCI441/OpenGLUtils.hpp>
 
 //*************************************************************************************
 //
 // Helper Functions
-namespace Engine {
-    MeshData* readOBJ(std::string filename)
+namespace Engine
+{
+    MeshData *readOBJ(std::string filename)
     {
 
         std::string myText;
@@ -101,9 +104,12 @@ namespace Engine {
                 }
                 {
                     getline(s, vertexData, '/');
-                    if(vertexData == "") {
+                    if (vertexData == "")
+                    {
                         t_id = -1;
-                    } else {
+                    }
+                    else
+                    {
                         std::stringstream s2(vertexData);
                         s2 >> t_id;
                     }
@@ -116,9 +122,12 @@ namespace Engine {
                 indices[indices.size() - 1].push_back(id - 1);
                 points[id - 1] = verticies[id - 1];
                 point_normals[id - 1] = normals[n_id - 1];
-                if(t_id != -1) {
+                if (t_id != -1)
+                {
                     point_coords[id - 1] = tex_coords[t_id - 1];
-                } else {
+                }
+                else
+                {
                     point_coords[id - 1] = glm::vec2(0, 0);
                 }
                 getline(spliter, segment, ' ');
@@ -130,9 +139,12 @@ namespace Engine {
                 }
                 {
                     getline(s3, vertexData, '/');
-                    if(vertexData == "") {
+                    if (vertexData == "")
+                    {
                         t_id = -1;
-                    } else {
+                    }
+                    else
+                    {
                         std::stringstream s2(vertexData);
                         s2 >> t_id;
                     }
@@ -147,9 +159,12 @@ namespace Engine {
                 indices[indices.size() - 1].push_back(id - 1);
                 points[id - 1] = verticies[id - 1];
                 point_normals[id - 1] = normals[n_id - 1];
-                if(t_id != -1) {
+                if (t_id != -1)
+                {
                     point_coords[id - 1] = tex_coords[t_id - 1];
-                } else {
+                }
+                else
+                {
                     point_coords[id - 1] = glm::vec2(0, 0);
                 }
                 getline(spliter, segment, ' ');
@@ -161,9 +176,12 @@ namespace Engine {
                 }
                 {
                     getline(s5, vertexData, '/');
-                    if(vertexData == "") {
+                    if (vertexData == "")
+                    {
                         t_id = -1;
-                    } else {
+                    }
+                    else
+                    {
                         std::stringstream s2(vertexData);
                         s2 >> t_id;
                     }
@@ -176,9 +194,12 @@ namespace Engine {
                 indices[indices.size() - 1].push_back(id - 1);
                 points[id - 1] = verticies[id - 1];
                 point_normals[id - 1] = normals[n_id - 1];
-                if(t_id != -1) {
+                if (t_id != -1)
+                {
                     point_coords[id - 1] = tex_coords[t_id - 1];
-                } else {
+                }
+                else
+                {
                     point_coords[id - 1] = glm::vec2(0, 0);
                 }
             }
@@ -194,34 +215,75 @@ namespace Engine {
             indices};
         return data;
     }
-    
+
     // Outputs (vao, (vbo, ibo[]))
-    std::pair<GLuint, std::pair<GLuint, std::vector<GLuint>>> _getVao(MeshData meshes)
+    BufferData _getVao(MeshData meshes)
     {
-        GLuint vaod;
-        glGenVertexArrays(1, &vaod);
-        glBindVertexArray(vaod);
+        GLuint vao;
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
 
         GLuint vbo;
-        glGenBuffers( 1, &vbo );
+        glGenBuffers(1, &vbo);
 
-        glBindBuffer( GL_ARRAY_BUFFER, vbo );
-        glBufferData( GL_ARRAY_BUFFER, sizeof(GLfloat) * meshes.points.size() * 8, nullptr, GL_STATIC_DRAW );
-        glBufferSubData( GL_ARRAY_BUFFER, 0,                                  sizeof(GLfloat) * meshes.points.size() * 3, &meshes.points[0]  );
-        glBufferSubData( GL_ARRAY_BUFFER, sizeof(GLfloat) * meshes.points.size() * 3, sizeof(GLfloat) * meshes.points.size() * 3, &meshes.normals[0]   );
-        glBufferSubData( GL_ARRAY_BUFFER, sizeof(GLfloat) * meshes.points.size() * 6, sizeof(GLfloat) * meshes.points.size() * 2, &meshes.texCoords[0] );
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * meshes.points.size() * 8, nullptr, GL_STATIC_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * meshes.points.size() * 3, &meshes.points[0]);
+        glBufferSubData(GL_ARRAY_BUFFER, sizeof(GLfloat) * meshes.points.size() * 3, sizeof(GLfloat) * meshes.points.size() * 3, &meshes.normals[0]);
+        glBufferSubData(GL_ARRAY_BUFFER, sizeof(GLfloat) * meshes.points.size() * 6, sizeof(GLfloat) * meshes.points.size() * 2, &meshes.texCoords[0]);
 
         std::vector<GLuint> ibos;
-        for(int i = 0; i < meshes.indicies.size(); i++) {
+        for (int i = 0; i < meshes.indicies.size(); i++)
+        {
             ibos.push_back(0);
-            glGenBuffers( 1, &ibos[i] );
-            glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibos[i] );
-    std::cout << "Plane Created" << sizeof(uint32_t)*meshes.indicies[i].size() <<" "<<ibos[i]<<" "<<glGetError()<< std::endl;
-            glBufferData( GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t)*meshes.indicies[i].size(), 0, GL_STATIC_DRAW) ;
-    std::cout << "Plane Created" << sizeof(uint32_t)*meshes.indicies[i].size() <<" "<<ibos[i]<<" "<<glGetError()<< std::endl;
-            glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(uint32_t)*meshes.indicies[i].size(), &meshes.indicies[i][0]  );
+            glGenBuffers(1, &ibos[i]);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibos[i]);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * meshes.indicies[i].size(), 0, GL_STATIC_DRAW);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(uint32_t) * meshes.indicies[i].size(), &meshes.indicies[i][0]);
         }
 
-        return std::pair(vaod, std::pair(vbo, ibos));
+        std::vector<GLuint> ibo_sizes;
+        
+        for(int i = 0; i < meshes.indicies.size(); i++)
+        {
+            ibo_sizes.push_back(meshes.indicies[i].size());
+        }
+
+        return BufferData
+        {
+            vao,
+            vbo,
+            ibos,
+            (GLuint) meshes.points.size(),
+            ibo_sizes,
+        };
     }
+}
+
+void Engine::drawObj(BufferData meshData, int idx)
+{
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glBindVertexArray(meshData.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, meshData.vbo);
+    GLint old_id;
+
+    if (CSCI441_INTERNAL::_positionAttributeLocation != -1)
+    {
+        glEnableVertexAttribArray(CSCI441_INTERNAL::_positionAttributeLocation);
+        glVertexAttribPointer(CSCI441_INTERNAL::_positionAttributeLocation, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+    }
+    if (CSCI441_INTERNAL::_normalAttributeLocation != -1)
+    {
+        glEnableVertexAttribArray(CSCI441_INTERNAL::_normalAttributeLocation);
+        glVertexAttribPointer(CSCI441_INTERNAL::_normalAttributeLocation, 3, GL_FLOAT, GL_FALSE, 0, (void *)(sizeof(GLfloat) * meshData.vbo_size * 3));
+    }
+    if (CSCI441_INTERNAL::_texCoordAttributeLocation != -1)
+    {
+        glEnableVertexAttribArray(CSCI441_INTERNAL::_texCoordAttributeLocation);
+        glVertexAttribPointer(CSCI441_INTERNAL::_texCoordAttributeLocation, 2, GL_FLOAT, GL_FALSE, 0, (void *)(sizeof(GLfloat) * meshData.vbo_size * 6));
+    }
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &old_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshData.ibos[idx]);
+    glDrawElements(GL_TRIANGLES, meshData.ibo_size[idx], GL_UNSIGNED_INT, (void *)0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, old_id);
 }
