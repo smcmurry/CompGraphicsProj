@@ -107,7 +107,6 @@ private:
         GLint mvpMatrix;
         /// \desc material diffuse color location
         GLint materialColor;
-        // TODO #1: add new uniforms
         GLint normalMatrix;
         GLint lightDirection;
         GLint lightColor;
@@ -118,7 +117,6 @@ private:
     {
         /// \desc vertex position location
         GLint vPos;
-        // TODO #2: add new attributes
         GLint vNormal;
 
     } _lightingShaderAttributeLocations;

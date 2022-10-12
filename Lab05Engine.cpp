@@ -134,22 +134,18 @@ void Lab05Engine::_setupShaders()
     _lightingShaderProgram = new CSCI441::ShaderProgram("shaders/lab05.v.glsl", "shaders/lab05.f.glsl");
     _lightingShaderUniformLocations.mvpMatrix = _lightingShaderProgram->getUniformLocation("mvpMatrix");
     _lightingShaderUniformLocations.materialColor = _lightingShaderProgram->getUniformLocation("materialColor");
-    // TODO #3A: assign uniforms
     _lightingShaderUniformLocations.lightDirection = _lightingShaderProgram->getUniformLocation("lightDirection");
     _lightingShaderUniformLocations.lightColor = _lightingShaderProgram->getUniformLocation("lightColor");
     _lightingShaderUniformLocations.normalMatrix = _lightingShaderProgram->getUniformLocation("normalMatrix");
 
     _lightingShaderAttributeLocations.vPos = _lightingShaderProgram->getAttributeLocation("vPos");
-    // TODO #3B: assign attributes
     _lightingShaderAttributeLocations.vNormal = _lightingShaderProgram->getAttributeLocation("vNormal");
 }
 
 void Lab05Engine::_setupBuffers()
 {
-    // TODO #4: need to connect our 3D Object Library to our shader
     CSCI441::setVertexAttributeLocations(_lightingShaderAttributeLocations.vPos, _lightingShaderAttributeLocations.vNormal);
 
-    // TODO #5: give the plane the normal matrix location
 
     Engine::MeshData *readData = Engine::readOBJ("./assets.obj");
     // for(int i = 0; i < readData.points[0].size(); i++){
@@ -169,14 +165,12 @@ void Lab05Engine::_setupBuffers()
 
 void Lab05Engine::_createGroundBuffers()
 {
-    // TODO #8: expand our struct
     struct Vertex
     {
         GLfloat x, y, z;
         GLfloat xn, yn, zn;
     };
 
-    // TODO #9: add normal data
     Vertex groundQuad[4] = {
         {-1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f},
         {1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f},
@@ -198,7 +192,6 @@ void Lab05Engine::_createGroundBuffers()
     glEnableVertexAttribArray(_lightingShaderAttributeLocations.vPos);
     glVertexAttribPointer(_lightingShaderAttributeLocations.vPos, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
 
-    // TODO #10: hook up vertex normal attribute
     glEnableVertexAttribArray(_lightingShaderAttributeLocations.vNormal);
     glVertexAttribPointer(_lightingShaderAttributeLocations.vNormal, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)(3 * sizeof(float)));
 
@@ -265,7 +258,6 @@ void Lab05Engine::_setupScene()
     _freeCam->recomputeOrientation();
     _cameraSpeed = glm::vec2(0.25f, 0.02f);
 
-    // TODO #6: set lighting uniforms
     glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
     glm::vec3 lightCol = glm::vec3(1.0f, 1.0f, 1.0f);
     glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightDirection, 1, &lightDir[0]);
@@ -423,7 +415,6 @@ void Lab05Engine::_computeAndSendMatrixUniforms(glm::mat4 modelMtx, glm::mat4 vi
     // then send it to the shader on the GPU to apply to every vertex
     _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.mvpMatrix, mvpMtx);
 
-    // TODO #7: compute and send the normal matrix
     glm::mat3 normalMtx = glm::mat3(glm::transpose(glm::inverse(modelMtx)));
     _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.normalMatrix, normalMtx);
 }
