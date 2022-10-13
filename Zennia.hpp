@@ -46,7 +46,7 @@ private:
     /// \desc stores the uniform locations needed for the plan information
     struct ShaderProgramUniformLocations {
         /// \desc location of the precomputed ModelViewProjection matrix
-        GLint mvpMtx;
+        GLint mMtx;
         /// \desc location of the precomputed Normal matrix
         GLint normalMtx;
         /// \desc location of the material diffuse color
@@ -71,7 +71,7 @@ private:
     /// \param modelMtx model transformation matrix
     /// \param viewMtx camera view matrix
     /// \param projMtx camera projection matrix
-    void _computeAndSendMatrixUniforms(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx) const;
+    void _computeAndSendMatrixUniforms(glm::mat4 modelMtx) const;
 };
 
 

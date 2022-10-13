@@ -133,11 +133,18 @@ void Lab05Engine::_setupOpenGL()
 void Lab05Engine::_setupShaders()
 {
     _lightingShaderProgram = new CSCI441::ShaderProgram("shaders/lab05.v.glsl", "shaders/lab05.f.glsl");
-    _lightingShaderUniformLocations.mvpMatrix = _lightingShaderProgram->getUniformLocation("mvpMatrix");
+    _lightingShaderUniformLocations.mMatrix = _lightingShaderProgram->getUniformLocation("mMatrix");
+    _lightingShaderUniformLocations.vMatrix = _lightingShaderProgram->getUniformLocation("vMatrix");
+    _lightingShaderUniformLocations.pMatrix = _lightingShaderProgram->getUniformLocation("pMatrix");
     _lightingShaderUniformLocations.materialColor = _lightingShaderProgram->getUniformLocation("materialColor");
-    _lightingShaderUniformLocations.lightDirection = _lightingShaderProgram->getUniformLocation("lightDirection");
-    _lightingShaderUniformLocations.lightColor = _lightingShaderProgram->getUniformLocation("lightColor");
+    _lightingShaderUniformLocations.ambientColor = _lightingShaderProgram->getUniformLocation("ambientColor");
     _lightingShaderUniformLocations.normalMatrix = _lightingShaderProgram->getUniformLocation("normalMatrix");
+    _lightingShaderUniformLocations.lightColors = _lightingShaderProgram->getUniformLocation("lightColors");
+    _lightingShaderUniformLocations.lightDirections = _lightingShaderProgram->getUniformLocation("lightDirections");
+    _lightingShaderUniformLocations.lightPositions = _lightingShaderProgram->getUniformLocation("lightPositions");
+    _lightingShaderUniformLocations.lightSizes = _lightingShaderProgram->getUniformLocation("lightSizes");
+    _lightingShaderUniformLocations.lightTypes = _lightingShaderProgram->getUniformLocation("lightTypes");
+    _lightingShaderUniformLocations.lightCount = _lightingShaderProgram->getUniformLocation("lightCount");
 
     _lightingShaderAttributeLocations.vPos = _lightingShaderProgram->getAttributeLocation("vPos");
     _lightingShaderAttributeLocations.vNormal = _lightingShaderProgram->getAttributeLocation("vNormal");
@@ -155,7 +162,7 @@ void Lab05Engine::_setupBuffers()
     // }
 
     _zennia = new Zennia(_lightingShaderProgram->getShaderProgramHandle(),
-                         _lightingShaderUniformLocations.mvpMatrix,
+                         _lightingShaderUniformLocations.mMatrix,
                          _lightingShaderUniformLocations.normalMatrix,
                          _lightingShaderUniformLocations.materialColor,
                          readData);
@@ -259,10 +266,19 @@ void Lab05Engine::_setupScene()
     _freeCam->recomputeOrientation();
     _cameraSpeed = glm::vec2(0.25f, 0.02f);
 
-    glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
-    glm::vec3 lightCol = glm::vec3(1.0f, 1.0f, 1.0f);
-    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightDirection, 1, &lightDir[0]);
-    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightColor, 1, &lightCol[0]);
+    std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0)};
+    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0)};
+    std::vector<glm::vec3> lightColors = {glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f)};
+    std::vector<uint32_t> lightTypes = {0, 1};
+    std::vector<float> lightSizes = {0.f, 0.f};
+    uint32_t numLights = lightDirections.size();
+    glProgramUniform3f(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.ambientColor, 0.1, 0.1, 0.1);
+    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightPositions, numLights, &lightPositions[0][0]);
+    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightDirections, numLights, &lightDirections[0][0]);
+    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightColors, numLights, &lightColors[0][0]);
+    glProgramUniform1uiv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightTypes, numLights, &lightTypes[0]);
+    glProgramUniform1fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightSizes, numLights, &lightSizes[0]);
+    glProgramUniform1ui(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightCount, numLights);
 }
 
 //*************************************************************************************
@@ -297,11 +313,13 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
 {
     // use our lighting shader program
     _lightingShaderProgram->useProgram();
+    _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.vMatrix, viewMtx);
+    _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.pMatrix, projMtx);
 
     //// BEGIN DRAWING THE GROUND PLANE ////
     // draw the ground plane
     glm::mat4 groundModelMtx = glm::scale(glm::mat4(1.0f), glm::vec3(WORLD_SIZE, 1.0f, WORLD_SIZE));
-    _computeAndSendMatrixUniforms(groundModelMtx, viewMtx, projMtx);
+    _computeAndSendMatrixUniforms(groundModelMtx);
 
     glm::vec3 groundColor(0.3f, 0.8f, 0.2f);
     glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &groundColor[0]);
@@ -313,7 +331,7 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     //// BEGIN DRAWING THE BUILDINGS ////
     for (const BuildingData &currentBuilding : _buildings)
     {
-        _computeAndSendMatrixUniforms(currentBuilding.modelMatrix, viewMtx, projMtx);
+        _computeAndSendMatrixUniforms(currentBuilding.modelMatrix);
 
         glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &currentBuilding.color[0]);
 
@@ -409,12 +427,10 @@ void Lab05Engine::run()
 //
 // Private Helper FUnctions
 
-void Lab05Engine::_computeAndSendMatrixUniforms(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx) const
+void Lab05Engine::_computeAndSendMatrixUniforms(glm::mat4 modelMtx) const
 {
-    // precompute the Model-View-Projection matrix on the CPU
-    glm::mat4 mvpMtx = projMtx * viewMtx * modelMtx;
     // then send it to the shader on the GPU to apply to every vertex
-    _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.mvpMatrix, mvpMtx);
+    _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.mMatrix, modelMtx);
 
     glm::mat3 normalMtx = glm::mat3(glm::transpose(glm::inverse(modelMtx)));
     _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.normalMatrix, normalMtx);

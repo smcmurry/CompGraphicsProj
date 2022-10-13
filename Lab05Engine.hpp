@@ -104,14 +104,20 @@ private:
     struct LightingShaderUniformLocations
     {
         /// \desc precomputed MVP matrix location
-        GLint mvpMatrix;
+        GLint mMatrix;
+        GLint vMatrix;
+        GLint pMatrix;
         /// \desc material diffuse color location
         GLint materialColor;
         GLint normalMatrix;
-        GLint lightDirection;
-        GLint lightColor;
-
-    } _lightingShaderUniformLocations;
+        GLint ambientColor;
+        GLint lightPositions;
+        GLint lightDirections;
+        GLint lightColors;
+        GLint lightSizes;
+        GLint lightTypes;
+        GLint lightCount;
+} _lightingShaderUniformLocations;
     /// \desc stores the locations of all of our shader attributes
     struct LightingShaderAttributeLocations
     {
@@ -127,7 +133,7 @@ private:
     /// \param modelMtx model transformation matrix
     /// \param viewMtx camera view matrix
     /// \param projMtx camera projection matrix
-    void _computeAndSendMatrixUniforms(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx) const;
+    void _computeAndSendMatrixUniforms(glm::mat4 modelMtx) const;
 };
 
 void lab05_engine_keyboard_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
