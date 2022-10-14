@@ -12,6 +12,7 @@
 
 Zennia::Zennia(GLuint shaderProgramHandle, GLint mMtxUniformLocation, GLint normalMtxUniformLocation, GLint materialColorUniformLocation, Engine::MeshData *meshes)
 {
+    //Initialize variables
     _propAngle = 0.0f;
     _propAngleRotationSpeed = M_PI / 32.0f;
 
@@ -43,19 +44,19 @@ void Zennia::drawZennia(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx
 {
     modelMtx = glm::translate(modelMtx, glm::vec3(x, 0.2, y));
     modelMtx = glm::rotate(modelMtx, -angle, CSCI441::Y_AXIS);
-    modelMtx = glm::rotate(modelMtx, static_cast<GLfloat>(-M_PI / 4.0f), CSCI441::Z_AXIS);
-    modelMtx = glm::rotate(modelMtx, _propAngle, CSCI441::Y_AXIS);
+    modelMtx = glm::rotate(modelMtx, static_cast<GLfloat>(-M_PI / 4.0f), CSCI441::Z_AXIS); // put the flower at a diagonal angle
+    modelMtx = glm::rotate(modelMtx, _propAngle, CSCI441::Y_AXIS); //animate the rotation of the flower.
     modelMtx = glm::scale(modelMtx, _scaleProp);
 
     _computeAndSendMatrixUniforms(modelMtx);
     glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(0.1f, 0.1f, 0.1f)[0]);
-    Engine::drawObj(meshData, 0);
+    Engine::drawObj(meshData, 0); // draw the stem
     glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(1.0f, 0.1f, 1.0f)[0]);
-    Engine::drawObj(meshData, 1);
+    Engine::drawObj(meshData, 1); // draw the petals
     glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(1.0f, 1.0f, 0.1f)[0]);
-    Engine::drawObj(meshData, 2);
+    Engine::drawObj(meshData, 2); // draw the center flowery things
     glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(1.0f, 0.1f, 0.1f)[0]);
-    Engine::drawObj(meshData, 3);
+    Engine::drawObj(meshData, 3); // draw the cylindery things near the center
 }
 
 void Zennia::flyForward()
@@ -77,6 +78,7 @@ void Zennia::move(float dx, float dy)
 {
     x += dx;
     y += dy;
+    //collision detection with edge
     if (x > WORLD_SIZE)
         x = WORLD_SIZE;
     if (x < -WORLD_SIZE)

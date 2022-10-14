@@ -11,8 +11,8 @@ uniform vec3 ambientColor;
 uniform vec3 lightPositions[MAX_LIGHTS];
 uniform vec3 lightDirections[MAX_LIGHTS];
 uniform vec3 lightColors[MAX_LIGHTS];
-uniform float lightSizes[MAX_LIGHTS];
-uniform uint lightTypes[MAX_LIGHTS];
+uniform float lightSizes[MAX_LIGHTS]; // the angle of the spotlight
+uniform uint lightTypes[MAX_LIGHTS]; // light types 0 = directional, 1 = point, 2 = spot
 uniform uint lightCount;
 
 // attribute inputs
@@ -45,11 +45,11 @@ void main() {
         specular = pow(specular, 3.3);
         float diffuse = max(0.0, dot(normal, -L));
         vec3 lightColor = lightColors[i]*materialColor*(0.1*diffuse + 0.005*specular);
-        if(lightTypes[i] != 0) {
+        if(lightTypes[i] != 0) { // attenuation
             float dist = length(vec3(worldSpace) - lightPositions[i]);
             lightColor /= pow(dist, 2) + 0.5*dist + 1;
         }
-        if(lightTypes[i] == 2 && acos(dot(normalize(lightDirections[i]), L)) > lightSizes[i]) {
+        if(lightTypes[i] == 2 && acos(dot(normalize(lightDirections[i]), L)) > lightSizes[i]) { // limit spotlight
             lightColor = vec3(0);
         }
         color += lightColor;

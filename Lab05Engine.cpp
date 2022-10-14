@@ -53,7 +53,7 @@ void Lab05Engine::handleKeyEvent(GLint key, GLint action)
         switch (key)
         {
         // quit!
-        case GLFW_KEY_C:
+        case GLFW_KEY_C: //switch cameras
             if (cameraToggle == 0)
                 cameraToggle = 1;
             else if (cameraToggle == 1)
@@ -61,7 +61,7 @@ void Lab05Engine::handleKeyEvent(GLint key, GLint action)
             else
                 cameraToggle = 0;
             break;
-        case GLFW_KEY_X:
+        case GLFW_KEY_X: // switch heroes
             if (heroToggle == 0)
                 heroToggle = 1;
             else
@@ -98,7 +98,7 @@ void Lab05Engine::handleCursorPositionEvent(glm::vec2 currMousePosition)
     // if the left mouse button is being held down while the mouse is moving
     if (_leftMouseButtonState == GLFW_PRESS)
     {
-        if (_keys[GLFW_KEY_LEFT_SHIFT])
+        if (_keys[GLFW_KEY_LEFT_SHIFT]) // zoom when moving mouse while pressing shift
         {
             zoom += (currMousePosition.y - _mousePosition.y) * 0.01;
             if (zoom < 0.1)
@@ -217,7 +217,7 @@ void Lab05Engine::_generateEnvironment()
 
                 // compute random height
                 GLdouble height = getRand() * 0.5 + 1;
-                // scale to building size
+                // scale to randomly
                 glm::mat4 scaleToHeightMtx = glm::scale(glm::mat4(1.0), glm::vec3(1, height, 1));
 
                 // randomly rotate
@@ -227,7 +227,7 @@ void Lab05Engine::_generateEnvironment()
                 glm::mat4 modelMatrix = scaleToHeightMtx * transToSpotMtx*randomRotate;
 
                 // store building properties
-                BuildingData currentBuilding = {modelMatrix, (uint32_t) (4*getRand())};
+                BuildingData currentBuilding = {modelMatrix, (uint32_t) (4*getRand())}; //get random model id
                 _buildings.emplace_back(currentBuilding);
             }
         }
@@ -243,6 +243,7 @@ void Lab05Engine::_setupScene()
     _freeCam->recomputeOrientation();
     _cameraSpeed = glm::vec2(0.25f, 0.02f);
 
+    //Send all the lights to the gpu
     std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0), glm::vec3(0.0, 1.0, 0.0)};
     std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0), glm::vec3(0.0f, -0.1f, 1.0f)};
     std::vector<glm::vec3> lightColors = {glm::vec3(5.f, 6.f, 5.0f), glm::vec3(500.0f, 250.0f, 250.0f), glm::vec3(2000.f, 2000.f, 5000.f)};
@@ -256,6 +257,7 @@ void Lab05Engine::_setupScene()
     glProgramUniform1uiv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightTypes, numLights, &lightTypes[0]);
     glProgramUniform1fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightSizes, numLights, &lightSizes[0]);
     glProgramUniform1ui(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightCount, numLights);
+    fixCamera();
 }
 
 //*************************************************************************************
@@ -290,6 +292,7 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
 {
     // use our lighting shader program
     _lightingShaderProgram->useProgram();
+    // update viewMtx from camera position
     _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.vMatrix, viewMtx);
     _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.pMatrix, projMtx);
 
@@ -307,6 +310,7 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     for (const BuildingData &currentBuilding : _buildings)
     {
         _computeAndSendMatrixUniforms(currentBuilding.modelMatrix);
+        //choose color based on which model we are drawing
         glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &glm::vec3(0.1, 0.5, 0.1)[0]);
         if(currentBuilding.buildingId == 0)
             glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &glm::vec3(0.1, 0.5, 0.1)[0]);
@@ -321,9 +325,8 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     }
     //// END DRAWING THE BUILDINGS ////
 
-    //// BEGIN DRAWING THE PLANE ////
     glm::mat4 modelMtx(1.0f);
-    // draw our plane now
+    // don't draw the character in first person
     if (!heroToggle || cameraToggle != 2)
         _zennia->drawZennia(modelMtx, viewMtx, projMtx);
     if (heroToggle || cameraToggle != 2)
@@ -405,6 +408,7 @@ void Lab05Engine::_updateScene()
 
 }
 
+// resets the camera position to be correct given the camera type
 void Lab05Engine::fixCamera()
 {
     _freeCam->recomputeOrientation();
@@ -465,6 +469,7 @@ void Lab05Engine::run()
         glViewport(0, 0, framebufferWidth, framebufferHeight);
         _renderScene(viewMatrix, projectionMatrix);
         glClear(GL_DEPTH_BUFFER_BIT); // clear the current color contents and depth buffer in the window
+        //draw minimap
         glViewport(0, 0, framebufferWidth / 3, framebufferHeight / 3);
         if (!heroToggle)
             _renderScene(glm::lookAt(glm::vec3(_zennia->x, 10, _zennia->y), glm::vec3(_zennia->x, 0, _zennia->y), glm::vec3(1, 0, 0)), projectionMatrix);

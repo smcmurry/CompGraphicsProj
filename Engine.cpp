@@ -13,6 +13,7 @@
 // Helper Functions
 namespace Engine
 {
+    // Reads in geometry data from a file.
     MeshData *readOBJ(std::string filename)
     {
 
@@ -216,7 +217,7 @@ namespace Engine
         return data;
     }
 
-    // Outputs (vao, (vbo, ibo[]))
+    // Generate vao, vbo, and ibos for the mesh from readObj
     BufferData _getVao(MeshData meshes)
     {
         GLuint vao;
@@ -260,6 +261,7 @@ namespace Engine
     }
 }
 
+//Render a mesh at the given index from a buffer data from  the _getVao function
 void Engine::drawObj(BufferData meshData, int idx)
 {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
