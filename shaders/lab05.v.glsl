@@ -34,14 +34,22 @@ void main() {
     color = vec3(0);
     for(int i = 0; i < lightCount; i++) {
         vec3 L;
+        vec3 R;
         if(lightTypes[i] == 0) {
             L = normalize(lightDirections[i]);
         } else {
             L = normalize(vec3(worldSpace) - lightPositions[i]);
         }
-        vec3 lightColor = lightColors[i]*materialColor*max(dot(normal, -L), 0.0);
+        R = L-2*normal*dot(normal, L);
+        float specular = max(0.0, dot(R, -normalize(vec3(viewSpace))));
+        specular = pow(specular, 3.3);
+        float diffuse = max(0.0, dot(normal, -L));
+        vec3 lightColor = lightColors[i]*materialColor*(0.1*diffuse + 0.005*specular);
         if(lightTypes[i] != 0) {
             lightColor /= pow(length(vec3(worldSpace) - lightPositions[i]), 2);
+        }
+        if(lightTypes[i] == 2 && acos(dot(normalize(lightDirections[i]), L)) > lightSizes[i]) {
+            lightColor = vec3(0);
         }
         color += lightColor;
     }

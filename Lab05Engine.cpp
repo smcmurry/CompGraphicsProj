@@ -266,11 +266,11 @@ void Lab05Engine::_setupScene()
     _freeCam->recomputeOrientation();
     _cameraSpeed = glm::vec2(0.25f, 0.02f);
 
-    std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0)};
-    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0)};
-    std::vector<glm::vec3> lightColors = {glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f)};
-    std::vector<uint32_t> lightTypes = {0, 1};
-    std::vector<float> lightSizes = {0.f, 0.f};
+    std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0), glm::vec3(0.0, 1.0, 0.0)};
+    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0), glm::vec3(0.0f, 0.0f, 1.0f)};
+    std::vector<glm::vec3> lightColors = {glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)};
+    std::vector<uint32_t> lightTypes = {0, 1, 2};
+    std::vector<float> lightSizes = {0.f, 0.f, 1.f};
     uint32_t numLights = lightDirections.size();
     glProgramUniform3f(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.ambientColor, 0.1, 0.1, 0.1);
     glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightPositions, numLights, &lightPositions[0][0]);

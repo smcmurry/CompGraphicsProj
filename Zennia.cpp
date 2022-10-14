@@ -50,13 +50,13 @@ void Zennia::drawZennia(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx
     modelMtx = glm::scale(modelMtx, _scaleProp);
 
     _computeAndSendMatrixUniforms(modelMtx);
-    glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(0.0f, 0.0f, 0.0f)[0]);
+    glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(0.1f, 0.1f, 0.1f)[0]);
     Engine::drawObj(meshData, 0);
-    glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(1.0f, 0.0f, 1.0f)[0]);
+    glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(1.0f, 0.1f, 1.0f)[0]);
     Engine::drawObj(meshData, 1);
-    glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(1.0f, 1.0f, 0.0f)[0]);
+    glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(1.0f, 1.0f, 0.1f)[0]);
     Engine::drawObj(meshData, 2);
-    glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(1.0f, 0.0f, 0.0f)[0]);
+    glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &glm::vec3(1.0f, 0.1f, 0.1f)[0]);
     Engine::drawObj(meshData, 3);
 }
 
