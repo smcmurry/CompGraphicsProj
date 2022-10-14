@@ -53,6 +53,14 @@ void Lab05Engine::handleKeyEvent(GLint key, GLint action)
         switch (key)
         {
         // quit!
+        case GLFW_KEY_C:
+            if (cameraToggle == 0)
+                cameraToggle = 1;
+            else if (cameraToggle == 1)
+                cameraToggle = 2;
+            else
+                cameraToggle = 0;
+            break;
         case GLFW_KEY_X:
             if (heroToggle == 0)
                 heroToggle = 1;
@@ -96,11 +104,12 @@ void Lab05Engine::handleCursorPositionEvent(glm::vec2 currMousePosition)
             if (zoom < 0.1)
                 zoom = 0.1;
         }
-        else
-        {
+        else {
             // rotate the camera by the distance the mouse moved
+            if (cameraToggle != 2) {
             _freeCam->rotate((currMousePosition.x - _mousePosition.x) * 0.005f,
                              (_mousePosition.y - currMousePosition.y) * 0.005f);
+            }
         }
         fixCamera();
     }
@@ -325,49 +334,99 @@ void Lab05Engine::_updateScene()
     // fly
     if (_keys[GLFW_KEY_W])
     {
-        if (heroToggle)
-            _zennia->flyForward();
-        else
-            _jammss->walkForward();
-        fixCamera();
+        if (cameraToggle == 0 || cameraToggle == 2) {
+            if (heroToggle)
+                _zennia->flyForward();
+            else
+                _jammss->walkForward();
+            fixCamera();
+        }
+        if (cameraToggle == 1) {
+            _freeCam->rotate(0.0f, _cameraSpeed.y);
+        }
     }
     if (_keys[GLFW_KEY_S])
     {
-        if (heroToggle)
-            _zennia->flyBackward();
-        else
-            _jammss->walkForward();
-        fixCamera();
+        if (cameraToggle == 0 || cameraToggle == 2) {
+            if (heroToggle)
+                _zennia->flyBackward();
+            else
+                _jammss->walkForward();
+            fixCamera();
+        }
+        if (cameraToggle == 1) {
+            _freeCam->rotate(0.0f, -_cameraSpeed.y);
+        }
     }
     // turn right
     if (_keys[GLFW_KEY_D])
     {
-        _freeCam->rotate(_cameraSpeed.y, 0.0f);
-        if (heroToggle)
-            _zennia->angle += _cameraSpeed.y;
-        else
-            _jammss->angle += _cameraSpeed.y;
-        fixCamera();
+        if (cameraToggle == 0 || cameraToggle == 2) {
+            _freeCam->rotate(_cameraSpeed.y, 0.0f);
+            if (heroToggle)
+                _zennia->angle += _cameraSpeed.y;
+            else
+                _jammss->angle += _cameraSpeed.y;
+            fixCamera();
+        }
+        if (cameraToggle == 1) {
+            _freeCam->rotate(_cameraSpeed.y, 0.0f);
+        }
     }
     // turn left
     if (_keys[GLFW_KEY_A])
     {
-        _freeCam->rotate(-_cameraSpeed.y, 0.0f);
-        if (heroToggle)
-            _zennia->angle -= _cameraSpeed.y;
-        else
-            _jammss->angle -= _cameraSpeed.y;
-        fixCamera();
+        if (cameraToggle == 0 || cameraToggle == 2) {
+            _freeCam->rotate(-_cameraSpeed.y, 0.0f);
+            if (heroToggle)
+                _zennia->angle -= _cameraSpeed.y;
+            else
+                _jammss->angle -= _cameraSpeed.y;
+            fixCamera();
+        }
+        if (cameraToggle == 1) {
+            _freeCam->rotate(-_cameraSpeed.y, 0.0f);
+        }
     }
+    if( _keys[GLFW_KEY_SPACE] ) {
+        // go backward if shift held down
+        if (cameraToggle == 1) {
+            if (_keys[GLFW_KEY_LEFT_SHIFT] || _keys[GLFW_KEY_RIGHT_SHIFT]) {
+                _freeCam->moveBackward(_cameraSpeed.x);
+            }
+                // go forward
+            else {
+                _freeCam->moveForward(_cameraSpeed.x);
+            }
+        }
+    }
+
 }
 
 void Lab05Engine::fixCamera()
 {
     _freeCam->recomputeOrientation();
-    if (heroToggle)
-        _freeCam->setPosition(glm::vec3(_zennia->x, 0, _zennia->y) + zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
-    else
-        _freeCam->setPosition(glm::vec3(_jammss->x, 0, _jammss->y) + zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
+    if (heroToggle) {
+        if (cameraToggle == 0) {
+            _freeCam->setPosition(glm::vec3(_zennia->x, 0, _zennia->y) +
+                                  zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
+        }
+        if (cameraToggle == 2) {
+            _freeCam->setPosition(glm::vec3(_zennia->x, 1.0f, _zennia->y));
+            _freeCam->setLookAtPoint(glm::vec3(_zennia->x, 1.0f, _zennia->y) + glm::vec3(cos(_zennia->angle), 0.0f, sin(_zennia->angle)));
+        }
+
+    } else {
+        if (cameraToggle == 0) {
+            _freeCam->setPosition(
+                    glm::vec3(_jammss->x, 0, _jammss->y) +
+                    zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
+        }
+        if (cameraToggle == 2) {
+            _freeCam->setPosition(glm::vec3(_jammss->x, 1.0f, _jammss->y));
+            _freeCam->setLookAtPoint(glm::vec3(_jammss->x, 1.0f, _jammss->y) + glm::vec3(cos(_jammss->angle), 0.0f, sin(_jammss->angle)));
+        }
+    }
     _freeCam->recomputeOrientation();
 }
 
@@ -403,8 +462,10 @@ void Lab05Engine::run()
         _renderScene(viewMatrix, projectionMatrix);
         glClear(GL_DEPTH_BUFFER_BIT); // clear the current color contents and depth buffer in the window
         glViewport(0, 0, framebufferWidth / 3, framebufferHeight / 3);
-        _renderScene(glm::lookAt(glm::vec3(_zennia->x, 10, _zennia->y), glm::vec3(_zennia->x, 0, _zennia->y), glm::vec3(1, 0, 0)), projectionMatrix);
-        _renderScene(glm::lookAt(glm::vec3(_jammss->x, 10, _jammss->y), glm::vec3(_jammss->x, 0, _jammss->y), glm::vec3(1, 0, 0)), projectionMatrix);
+        if (cameraToggle != 2 || !heroToggle)
+            _renderScene(glm::lookAt(glm::vec3(_zennia->x, 10, _zennia->y), glm::vec3(_zennia->x, 0, _zennia->y), glm::vec3(1, 0, 0)), projectionMatrix);
+        if (cameraToggle != 2 || heroToggle)
+            _renderScene(glm::lookAt(glm::vec3(_jammss->x, 10, _jammss->y), glm::vec3(_jammss->x, 0, _jammss->y), glm::vec3(1, 0, 0)), projectionMatrix);
         _updateScene();
 
         glfwSwapBuffers(_window); // flush the OpenGL commands and make sure they get rendered!
