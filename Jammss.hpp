@@ -26,6 +26,10 @@ public:
     void walkForward();
     /// \desc simulates the plane flying backward by rotating the propeller counter-clockwise
 
+    float x;
+    float y;
+    float angle;
+
 private:
 
     GLfloat _legAngle1;
@@ -43,7 +47,7 @@ private:
     /// \desc stores the uniform locations needed for the plan information
     struct ShaderProgramUniformLocations {
         /// \desc location of the precomputed ModelViewProjection matrix
-        GLint mvpMtx;
+        GLint mMtx;
         /// \desc location of the precomputed Normal matrix
         GLint normalMtx;
         /// \desc location of the material diffuse color
@@ -75,6 +79,7 @@ private:
     GLfloat _rotateRightArmAngle;
     GLfloat _rotateOuterArmAngle;
 
+    void move(float dx, float dy);
 
 
     void _drawPlaneBody(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx ) const;
@@ -87,7 +92,7 @@ private:
 
     void _drawLegs(bool isLeftLeg, glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx ) const;
 
-    void _computeAndSendMatrixUniforms(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx) const;
+    void _computeAndSendMatrixUniforms(glm::mat4 modelMtx) const;
 };
 
 

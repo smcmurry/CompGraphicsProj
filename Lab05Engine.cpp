@@ -53,11 +53,16 @@ void Lab05Engine::handleKeyEvent(GLint key, GLint action)
         switch (key)
         {
         // quit!
+        case GLFW_KEY_X:
+            if (heroToggle == 0)
+                heroToggle = 1;
+            else
+                heroToggle = 0;
+            break;
         case GLFW_KEY_Q:
         case GLFW_KEY_ESCAPE:
             setWindowShouldClose();
             break;
-
         default:
             break; // suppress CLion warning
         }
@@ -166,6 +171,10 @@ void Lab05Engine::_setupBuffers()
                          _lightingShaderUniformLocations.normalMatrix,
                          _lightingShaderUniformLocations.materialColor,
                          readData);
+    _jammss = new Jammss(_lightingShaderProgram->getShaderProgramHandle(),
+            _lightingShaderUniformLocations.mMatrix,
+            _lightingShaderUniformLocations.normalMatrix,
+            _lightingShaderUniformLocations.materialColor);
 
     _createGroundBuffers();
     _generateEnvironment();
@@ -303,6 +312,7 @@ void Lab05Engine::_cleanupBuffers()
     fprintf(stdout, "[INFO]: ...deleting models..\n");
     _zennia->freeData();
     delete _zennia;
+    delete _jammss;
 }
 
 //*************************************************************************************
@@ -343,6 +353,7 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     glm::mat4 modelMtx(1.0f);
     // draw our plane now
     _zennia->drawZennia(modelMtx, viewMtx, projMtx);
+    _jammss->drawJammss(modelMtx, viewMtx, projMtx);
     //// END DRAWING THE PLANE ////
 }
 
@@ -351,26 +362,38 @@ void Lab05Engine::_updateScene()
     // fly
     if (_keys[GLFW_KEY_W])
     {
-        _zennia->flyForward();
+        if (heroToggle)
+            _zennia->flyForward();
+        else
+            _jammss->walkForward();
         fixCamera();
     }
     if (_keys[GLFW_KEY_S])
     {
-        _zennia->flyBackward();
+        if (heroToggle)
+            _zennia->flyBackward();
+        else
+            _jammss->walkForward();
         fixCamera();
     }
     // turn right
     if (_keys[GLFW_KEY_D])
     {
         _freeCam->rotate(_cameraSpeed.y, 0.0f);
-        _zennia->angle += _cameraSpeed.y;
+        if (heroToggle)
+            _zennia->angle += _cameraSpeed.y;
+        else
+            _jammss->angle += _cameraSpeed.y;
         fixCamera();
     }
     // turn left
     if (_keys[GLFW_KEY_A])
     {
         _freeCam->rotate(-_cameraSpeed.y, 0.0f);
-        _zennia->angle -= _cameraSpeed.y;
+        if (heroToggle)
+            _zennia->angle -= _cameraSpeed.y;
+        else
+            _jammss->angle -= _cameraSpeed.y;
         fixCamera();
     }
 }
@@ -378,7 +401,10 @@ void Lab05Engine::_updateScene()
 void Lab05Engine::fixCamera()
 {
     _freeCam->recomputeOrientation();
-    _freeCam->setPosition(glm::vec3(_zennia->x, 0, _zennia->y) + zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
+    if (heroToggle)
+        _freeCam->setPosition(glm::vec3(_zennia->x, 0, _zennia->y) + zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
+    else
+        _freeCam->setPosition(glm::vec3(_jammss->x, 0, _jammss->y) + zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
     _freeCam->recomputeOrientation();
 }
 
@@ -415,7 +441,7 @@ void Lab05Engine::run()
         glClear(GL_DEPTH_BUFFER_BIT); // clear the current color contents and depth buffer in the window
         glViewport(0, 0, framebufferWidth / 3, framebufferHeight / 3);
         _renderScene(glm::lookAt(glm::vec3(_zennia->x, 10, _zennia->y), glm::vec3(_zennia->x, 0, _zennia->y), glm::vec3(1, 0, 0)), projectionMatrix);
-
+        _renderScene(glm::lookAt(glm::vec3(_jammss->x, 10, _jammss->y), glm::vec3(_jammss->x, 0, _jammss->y), glm::vec3(1, 0, 0)), projectionMatrix);
         _updateScene();
 
         glfwSwapBuffers(_window); // flush the OpenGL commands and make sure they get rendered!

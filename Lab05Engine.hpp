@@ -7,6 +7,7 @@
 #include <CSCI441/ShaderProgram.hpp>
 
 #include "Zennia.hpp"
+#include "Jammss.hpp"
 
 #include <vector>
 
@@ -72,6 +73,10 @@ private:
 
     /// \desc our plane model
     Zennia *_zennia;
+    Jammss *_jammss;
+
+    int heroToggle = 0;
+    int cameraToggle = 0;
 
     /// \desc the size of the world (controls the ground size and locations of buildings)
     static constexpr GLfloat WORLD_SIZE = 55.0f;
