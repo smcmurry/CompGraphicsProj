@@ -53,6 +53,13 @@ void Lab05Engine::handleKeyEvent(GLint key, GLint action)
         switch (key)
         {
         // quit!
+        case GLFW_KEY_C:
+            if (cameraToggle == 0)
+                cameraToggle = 1;
+            if (cameraToggle == 1)
+                cameraToggle = 2;
+            else
+                cameraToggle = 0;
         case GLFW_KEY_X:
             if (heroToggle == 0)
                 heroToggle = 1;
@@ -362,40 +369,73 @@ void Lab05Engine::_updateScene()
     // fly
     if (_keys[GLFW_KEY_W])
     {
-        if (heroToggle)
-            _zennia->flyForward();
-        else
-            _jammss->walkForward();
-        fixCamera();
+        if (cameraToggle == 0) {
+            if (heroToggle)
+                _zennia->flyForward();
+            else
+                _jammss->walkForward();
+            fixCamera();
+        }
+        if (cameraToggle == 1) {
+            _freeCam->rotate(0.0f, _cameraSpeed.y);
+        }
     }
     if (_keys[GLFW_KEY_S])
     {
-        if (heroToggle)
-            _zennia->flyBackward();
-        else
-            _jammss->walkForward();
-        fixCamera();
+        if (cameraToggle == 0) {
+            if (heroToggle)
+                _zennia->flyBackward();
+            else
+                _jammss->walkForward();
+            fixCamera();
+        }
+        if (cameraToggle == 1) {
+            _freeCam->rotate(0.0f, -_cameraSpeed.y);
+        }
     }
     // turn right
     if (_keys[GLFW_KEY_D])
     {
-        _freeCam->rotate(_cameraSpeed.y, 0.0f);
-        if (heroToggle)
-            _zennia->angle += _cameraSpeed.y;
-        else
-            _jammss->angle += _cameraSpeed.y;
-        fixCamera();
+        if (cameraToggle == 0) {
+            _freeCam->rotate(_cameraSpeed.y, 0.0f);
+            if (heroToggle)
+                _zennia->angle += _cameraSpeed.y;
+            else
+                _jammss->angle += _cameraSpeed.y;
+            fixCamera();
+        }
+        if (cameraToggle == 1) {
+            _freeCam->rotate(_cameraSpeed.y, 0.0f);
+        }
     }
     // turn left
     if (_keys[GLFW_KEY_A])
     {
-        _freeCam->rotate(-_cameraSpeed.y, 0.0f);
-        if (heroToggle)
-            _zennia->angle -= _cameraSpeed.y;
-        else
-            _jammss->angle -= _cameraSpeed.y;
-        fixCamera();
+        if (cameraToggle == 0) {
+            _freeCam->rotate(-_cameraSpeed.y, 0.0f);
+            if (heroToggle)
+                _zennia->angle -= _cameraSpeed.y;
+            else
+                _jammss->angle -= _cameraSpeed.y;
+            fixCamera();
+        }
+        if (cameraToggle == 1) {
+            _freeCam->rotate(-_cameraSpeed.y, 0.0f);
+        }
     }
+    if( _keys[GLFW_KEY_SPACE] ) {
+        // go backward if shift held down
+        if (cameraToggle == 0) {
+            if (_keys[GLFW_KEY_LEFT_SHIFT] || _keys[GLFW_KEY_RIGHT_SHIFT]) {
+                _freeCam->moveBackward(_cameraSpeed.x);
+            }
+                // go forward
+            else {
+                _freeCam->moveForward(_cameraSpeed.x);
+            }
+        }
+    }
+
 }
 
 void Lab05Engine::fixCamera()
