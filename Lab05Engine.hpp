@@ -80,13 +80,9 @@ private:
 
     /// \desc the size of the world (controls the ground size and locations of buildings)
     static constexpr GLfloat WORLD_SIZE = 55.0f;
-    /// \desc VAO for our ground
-    GLuint _groundVAO;
     /// \desc the number of points that make up our ground object
     GLsizei _numGroundPoints;
 
-    /// \desc creates the ground VAO
-    void _createGroundBuffers();
     void fixCamera();
 
     /// \desc smart container to store information specific to each building we wish to draw
@@ -94,8 +90,7 @@ private:
     {
         /// \desc transformations to position and size the building
         glm::mat4 modelMatrix;
-        /// \desc color to draw the building
-        glm::vec3 color;
+        uint32_t buildingId;
     };
     /// \desc information list of all the buildings to draw
     std::vector<BuildingData> _buildings;
@@ -105,6 +100,7 @@ private:
 
     /// \desc shader program that performs lighting
     CSCI441::ShaderProgram *_lightingShaderProgram = nullptr; // the wrapper for our shader program
+    Engine::BufferData worldMeshes;
     /// \desc stores the locations of all of our shader uniforms
     struct LightingShaderUniformLocations
     {

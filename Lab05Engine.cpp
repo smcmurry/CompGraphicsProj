@@ -161,10 +161,6 @@ void Lab05Engine::_setupBuffers()
 
 
     Engine::MeshData *readData = Engine::readOBJ("./assets.obj");
-    // for(int i = 0; i < readData.points[0].size(); i++){
-    //     std::cout << "v"<<readData.points[0][i].x <<" "<< readData.points[0][i].y <<" "<< readData.points[0][i].z << std::endl;
-    //     std::cout << "n"<<readData.normals[0][i].x <<" "<< readData.normals[0][i].y <<" "<< readData.normals[0][i].z << std::endl;
-    // }
 
     _zennia = new Zennia(_lightingShaderProgram->getShaderProgramHandle(),
                          _lightingShaderUniformLocations.mMatrix,
@@ -176,44 +172,9 @@ void Lab05Engine::_setupBuffers()
             _lightingShaderUniformLocations.normalMatrix,
             _lightingShaderUniformLocations.materialColor);
 
-    _createGroundBuffers();
+    Engine::MeshData *worldData = Engine::readOBJ("./world_meshes.obj");
+    worldMeshes = Engine::_getVao(*worldData);
     _generateEnvironment();
-}
-
-void Lab05Engine::_createGroundBuffers()
-{
-    struct Vertex
-    {
-        GLfloat x, y, z;
-        GLfloat xn, yn, zn;
-    };
-
-    Vertex groundQuad[4] = {
-        {-1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f},
-        {1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f},
-        {-1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f},
-        {1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f}};
-
-    GLushort indices[4] = {0, 1, 2, 3};
-
-    _numGroundPoints = 4;
-
-    glGenVertexArrays(1, &_groundVAO);
-    glBindVertexArray(_groundVAO);
-
-    GLuint vbods[2]; // 0 - VBO, 1 - IBO
-    glGenBuffers(2, vbods);
-    glBindBuffer(GL_ARRAY_BUFFER, vbods[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(groundQuad), groundQuad, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(_lightingShaderAttributeLocations.vPos);
-    glVertexAttribPointer(_lightingShaderAttributeLocations.vPos, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
-
-    glEnableVertexAttribArray(_lightingShaderAttributeLocations.vNormal);
-    glVertexAttribPointer(_lightingShaderAttributeLocations.vNormal, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)(3 * sizeof(float)));
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbods[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 }
 
 void Lab05Engine::_generateEnvironment()
@@ -243,23 +204,21 @@ void Lab05Engine::_generateEnvironment()
             if (i % 2 && j % 2 && getRand() < 0.4f)
             {
                 // translate to spot
-                glm::mat4 transToSpotMtx = glm::translate(glm::mat4(1.0), glm::vec3(i, 0.0f, j));
+                glm::mat4 transToSpotMtx = glm::translate(glm::mat4(1.0), glm::vec3(i+getRand(), 0.0f, j+getRand()));
 
                 // compute random height
-                GLdouble height = powf(getRand(), 2.5) * 10 + 1;
+                GLdouble height = getRand() * 0.5 + 1;
                 // scale to building size
                 glm::mat4 scaleToHeightMtx = glm::scale(glm::mat4(1.0), glm::vec3(1, height, 1));
 
-                // translate up to grid
-                glm::mat4 transToHeight = glm::translate(glm::mat4(1.0), glm::vec3(0, height / 2.0f, 0));
+                // randomly rotate
+                glm::mat4 randomRotate = glm::rotate(glm::mat4(1.0), getRand() * 360, glm::vec3(0, 1, 0));
 
                 // compute full model matrix
-                glm::mat4 modelMatrix = transToHeight * scaleToHeightMtx * transToSpotMtx;
+                glm::mat4 modelMatrix = scaleToHeightMtx * transToSpotMtx*randomRotate;
 
-                // compute random color
-                glm::vec3 color(getRand(), getRand(), getRand());
                 // store building properties
-                BuildingData currentBuilding = {modelMatrix, color};
+                BuildingData currentBuilding = {modelMatrix, (uint32_t) (4*getRand())};
                 _buildings.emplace_back(currentBuilding);
             }
         }
@@ -276,8 +235,8 @@ void Lab05Engine::_setupScene()
     _cameraSpeed = glm::vec2(0.25f, 0.02f);
 
     std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0), glm::vec3(0.0, 1.0, 0.0)};
-    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0), glm::vec3(0.0f, 0.0f, 1.0f)};
-    std::vector<glm::vec3> lightColors = {glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)};
+    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0), glm::vec3(0.0f, -0.1f, 1.0f)};
+    std::vector<glm::vec3> lightColors = {glm::vec3(5.f, 6.f, 5.0f), glm::vec3(500.0f, 250.0f, 250.0f), glm::vec3(2000.f, 2000.f, 5000.f)};
     std::vector<uint32_t> lightTypes = {0, 1, 2};
     std::vector<float> lightSizes = {0.f, 0.f, 1.f};
     uint32_t numLights = lightDirections.size();
@@ -304,7 +263,6 @@ void Lab05Engine::_cleanupBuffers()
 {
     fprintf(stdout, "[INFO]: ...deleting VAOs....\n");
     CSCI441::deleteObjectVAOs();
-    glDeleteVertexArrays(1, &_groundVAO);
 
     fprintf(stdout, "[INFO]: ...deleting VBOs....\n");
     CSCI441::deleteObjectVBOs();
@@ -331,21 +289,26 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     glm::mat4 groundModelMtx = glm::scale(glm::mat4(1.0f), glm::vec3(WORLD_SIZE, 1.0f, WORLD_SIZE));
     _computeAndSendMatrixUniforms(groundModelMtx);
 
-    glm::vec3 groundColor(0.3f, 0.8f, 0.2f);
+    glm::vec3 groundColor(1.0f, 1.0f, 1.0f);
     glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &groundColor[0]);
-
-    glBindVertexArray(_groundVAO);
-    glDrawElements(GL_TRIANGLE_STRIP, _numGroundPoints, GL_UNSIGNED_SHORT, (void *)0);
+    Engine::drawObj(worldMeshes, 4);
     //// END DRAWING THE GROUND PLANE ////
 
     //// BEGIN DRAWING THE BUILDINGS ////
     for (const BuildingData &currentBuilding : _buildings)
     {
         _computeAndSendMatrixUniforms(currentBuilding.modelMatrix);
+        glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &glm::vec3(0.1, 0.5, 0.1)[0]);
+        if(currentBuilding.buildingId == 0)
+            glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &glm::vec3(0.1, 0.5, 0.1)[0]);
+        else if(currentBuilding.buildingId == 1)
+            glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &glm::vec3(0.5, 0.5, 0.1)[0]);
+        else if(currentBuilding.buildingId == 2)
+            glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &glm::vec3(0.1, 0.1, 1.0)[0]);
+        else if(currentBuilding.buildingId == 3)
+            glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &glm::vec3(0.1, 1.0, 0.1)[0]);
 
-        glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &currentBuilding.color[0]);
-
-        CSCI441::drawSolidCube(1.0);
+        Engine::drawObj(worldMeshes, currentBuilding.buildingId);
     }
     //// END DRAWING THE BUILDINGS ////
 

@@ -46,7 +46,8 @@ void main() {
         float diffuse = max(0.0, dot(normal, -L));
         vec3 lightColor = lightColors[i]*materialColor*(0.1*diffuse + 0.005*specular);
         if(lightTypes[i] != 0) {
-            lightColor /= pow(length(vec3(worldSpace) - lightPositions[i]), 2);
+            float dist = length(vec3(worldSpace) - lightPositions[i]);
+            lightColor /= pow(dist, 2) + 0.5*dist + 1;
         }
         if(lightTypes[i] == 2 && acos(dot(normalize(lightDirections[i]), L)) > lightSizes[i]) {
             lightColor = vec3(0);

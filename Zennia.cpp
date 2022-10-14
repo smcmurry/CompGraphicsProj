@@ -41,8 +41,6 @@ Zennia::Zennia(GLuint shaderProgramHandle, GLint mMtxUniformLocation, GLint norm
 
 void Zennia::drawZennia(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx)
 {
-    glUseProgram(_shaderProgramHandle);
-
     modelMtx = glm::translate(modelMtx, glm::vec3(x, 0.2, y));
     modelMtx = glm::rotate(modelMtx, -angle, CSCI441::Y_AXIS);
     modelMtx = glm::rotate(modelMtx, static_cast<GLfloat>(-M_PI / 4.0f), CSCI441::Z_AXIS);
