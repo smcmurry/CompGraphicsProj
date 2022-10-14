@@ -9,7 +9,7 @@
 #define M_PI 3.14159265
 #endif
 
-Jammss::Jammss( GLuint shaderProgramHandle, GLint mvpMtxUniformLocation, GLint normalMtxUniformLocation, GLint materialColorUniformLocation ) {
+Jammss::Jammss( GLuint shaderProgramHandle, GLint mMtxUniformLocation, GLint normalMtxUniformLocation, GLint materialColorUniformLocation ) {
 
     _legAngle1 = -M_PI / 32.0f;
     _legAngle2 = M_PI / 32.0f;
@@ -21,7 +21,7 @@ Jammss::Jammss( GLuint shaderProgramHandle, GLint mvpMtxUniformLocation, GLint n
     _leg3Toggle = true;
 
     _shaderProgramHandle                            = shaderProgramHandle;
-    _shaderProgramUniformLocations.mvpMtx           = mvpMtxUniformLocation;
+    _shaderProgramUniformLocations.mMtx             = mMtxUniformLocation;
     _shaderProgramUniformLocations.normalMtx        = normalMtxUniformLocation;
     _shaderProgramUniformLocations.materialColor    = materialColorUniformLocation;
 
@@ -46,15 +46,25 @@ Jammss::Jammss( GLuint shaderProgramHandle, GLint mvpMtxUniformLocation, GLint n
 
     _colorLeaves = glm::vec3( 0.0f, 1.0f, 0.0f );
 
+    x = 0;
+    y = 0;
+    angle = 0;
+
 }
 
 void Jammss::drawJammss( glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx ) {
     glUseProgram( _shaderProgramHandle );
 
-    modelMtx = glm::rotate( modelMtx, -_rotatePlaneAngle, CSCI441::Y_AXIS );
-    modelMtx = glm::rotate( modelMtx, _rotatePlaneAngle, CSCI441::Z_AXIS );
+    //modelMtx = glm::rotate( modelMtx, -_rotatePlaneAngle, CSCI441::Y_AXIS );
+    //modelMtx = glm::rotate( modelMtx, _rotatePlaneAngle, CSCI441::Z_AXIS );
 
+    modelMtx = glm::translate( modelMtx, glm::vec3(x,0.6f,y));
+
+    modelMtx = glm::rotate(modelMtx, -angle, CSCI441::Y_AXIS);
     modelMtx = glm::rotate( modelMtx, _rotateBodyAngle,CSCI441::Z_AXIS);
+
+    modelMtx = glm::scale( modelMtx, glm::vec3(5.0f, 5.0f, 5.0f));
+    //modelMtx = glm::translate( modelMtx, glm::vec3(0.0f,1.0f,0.0f));
 
     _drawPlaneBody(modelMtx, viewMtx, projMtx);        // the body of our plane
     _drawUpperArm(true, modelMtx, viewMtx, projMtx);  // the left wing
@@ -94,13 +104,28 @@ void Jammss::walkForward() {
         if (_legAngle3 < GLfloat(-M_PI/8.0f))
             _leg3Toggle = !_leg3Toggle;
     }
+    move(-0.01f * cos(angle), -0.01f * sin(angle));
+}
+const int WORLD_SIZE = 55.0;
+void Jammss::move(float dx, float dy)
+{
+    x += dx;
+    y += dy;
+    if (x > WORLD_SIZE)
+        x = WORLD_SIZE;
+    if (x < -WORLD_SIZE)
+        x = -WORLD_SIZE;
+    if (y > WORLD_SIZE)
+        y = WORLD_SIZE;
+    if (y < -WORLD_SIZE)
+        y = -WORLD_SIZE;
 }
 
 
 void Jammss::_drawPlaneBody(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx ) const {
     modelMtx = glm::scale( modelMtx, _scaleBody );
 
-    _computeAndSendMatrixUniforms(modelMtx, viewMtx, projMtx);
+    _computeAndSendMatrixUniforms(modelMtx);
 
     glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &_colorBody[0]);
 
@@ -121,7 +146,7 @@ void Jammss::_drawUpperArm(bool isLeftArm, glm::mat4 modelMtx, glm::mat4 viewMtx
 
     modelMtx = glm::scale( modelMtx, _scaleArm );
 
-    _computeAndSendMatrixUniforms(modelMtx, viewMtx, projMtx);
+    _computeAndSendMatrixUniforms(modelMtx);
 
     glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &_colorBody[0]);
 
@@ -140,7 +165,7 @@ void Jammss::_drawForeArm(bool isLeftArm, glm::mat4 modelMtx, glm::mat4 viewMtx,
         modelMtx = glm::rotate(modelMtx, GLfloat(M_PI/1.0f), CSCI441::Z_AXIS);
         modelMtx = glm::rotate(modelMtx, -_rotateBodyAngle, CSCI441::Z_AXIS);
         modelMtx = glm::scale( modelMtx, _scaleArm );
-        _computeAndSendMatrixUniforms(modelMtx, viewMtx, projMtx);
+        _computeAndSendMatrixUniforms(modelMtx);
         glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &_colorBody[0]);
         CSCI441::drawSolidCylinder( 0.1,0.02, 0.2, 16, 16 );
     } else {
@@ -153,11 +178,11 @@ void Jammss::_drawForeArm(bool isLeftArm, glm::mat4 modelMtx, glm::mat4 viewMtx,
         modelMtx = glm::rotate(modelMtx, GLfloat(M_PI/2.0f), CSCI441::X_AXIS);
         modelMtx = glm::translate(modelMtx, glm::vec3(0.0f, -0.03f, 0.0f));
         modelMtx = glm::scale( modelMtx, _scaleArm );
-        _computeAndSendMatrixUniforms(modelMtx, viewMtx, projMtx);
+        _computeAndSendMatrixUniforms(modelMtx);
         glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &_colorTree[0]);
         CSCI441::drawSolidCylinder( 0.1,0.08, 0.45, 16, 16 );
         modelMtx = glm::translate(modelMtx, glm::vec3(0.0f, 0.3f, 0.0f));
-        _computeAndSendMatrixUniforms(modelMtx, viewMtx, projMtx);
+        _computeAndSendMatrixUniforms(modelMtx);
         glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &_colorLeaves[0]);
         CSCI441::drawSolidCone( 0.2,0.45, 16, 16 );
     }
@@ -170,7 +195,7 @@ void Jammss::_drawHead(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx 
     //modelMtx = glm::rotate( modelMtx, _rotateNoseAngle, CSCI441::Z_AXIS );
     modelMtx = glm::translate( modelMtx, glm::vec3(-0.12f,0.0f,0.0f));
     modelMtx = glm::scale( modelMtx, _scaleHead );
-    _computeAndSendMatrixUniforms(modelMtx, viewMtx, projMtx);
+    _computeAndSendMatrixUniforms(modelMtx);
 
     glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &_colorBody[0]);
 
@@ -192,7 +217,7 @@ void Jammss::_drawLegs(bool isLeftLeg, glm::mat4 modelMtx, glm::mat4 viewMtx, gl
 
     modelMtx = glm::scale( modelMtx, _scaleLeg );
 
-    _computeAndSendMatrixUniforms(modelMtx, viewMtx, projMtx);
+    _computeAndSendMatrixUniforms(modelMtx);
 
     glUniform3fv(_shaderProgramUniformLocations.materialColor, 1, &_colorBody[0]);
 
@@ -200,11 +225,10 @@ void Jammss::_drawLegs(bool isLeftLeg, glm::mat4 modelMtx, glm::mat4 viewMtx, gl
 }
 
 
-void Jammss::_computeAndSendMatrixUniforms(glm::mat4 modelMtx, glm::mat4 viewMtx, glm::mat4 projMtx) const {
+void Jammss::_computeAndSendMatrixUniforms(glm::mat4 modelMtx) const {
     // precompute the Model-View-Projection matrix on the CPU
-    glm::mat4 mvpMtx = projMtx * viewMtx * modelMtx;
     // then send it to the shader on the GPU to apply to every vertex
-    glProgramUniformMatrix4fv( _shaderProgramHandle, _shaderProgramUniformLocations.mvpMtx, 1, GL_FALSE, &mvpMtx[0][0] );
+    glProgramUniformMatrix4fv( _shaderProgramHandle, _shaderProgramUniformLocations.mMtx, 1, GL_FALSE, &modelMtx[0][0] );
 
     glm::mat3 normalMtx = glm::mat3( glm::transpose( glm::inverse( modelMtx )));
     glProgramUniformMatrix3fv( _shaderProgramHandle, _shaderProgramUniformLocations.normalMtx, 1, GL_FALSE, &normalMtx[0][0] );
