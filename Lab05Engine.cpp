@@ -324,8 +324,10 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     //// BEGIN DRAWING THE PLANE ////
     glm::mat4 modelMtx(1.0f);
     // draw our plane now
-    _zennia->drawZennia(modelMtx, viewMtx, projMtx);
-    _jammss->drawJammss(modelMtx, viewMtx, projMtx);
+    if (!heroToggle || cameraToggle != 2)
+        _zennia->drawZennia(modelMtx, viewMtx, projMtx);
+    if (heroToggle || cameraToggle != 2)
+        _jammss->drawJammss(modelMtx, viewMtx, projMtx);
     //// END DRAWING THE PLANE ////
 }
 
@@ -362,7 +364,7 @@ void Lab05Engine::_updateScene()
     if (_keys[GLFW_KEY_D])
     {
         if (cameraToggle == 0 || cameraToggle == 2) {
-            _freeCam->rotate(_cameraSpeed.y, 0.0f);
+           if(cameraToggle == 0)  _freeCam->rotate(_cameraSpeed.y, 0.0f);
             if (heroToggle)
                 _zennia->angle += _cameraSpeed.y;
             else
@@ -377,7 +379,7 @@ void Lab05Engine::_updateScene()
     if (_keys[GLFW_KEY_A])
     {
         if (cameraToggle == 0 || cameraToggle == 2) {
-            _freeCam->rotate(-_cameraSpeed.y, 0.0f);
+            if(cameraToggle == 0) _freeCam->rotate(-_cameraSpeed.y, 0.0f);
             if (heroToggle)
                 _zennia->angle -= _cameraSpeed.y;
             else
@@ -412,8 +414,9 @@ void Lab05Engine::fixCamera()
                                   zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
         }
         if (cameraToggle == 2) {
-            _freeCam->setPosition(glm::vec3(_zennia->x, 1.0f, _zennia->y));
-            _freeCam->setLookAtPoint(glm::vec3(_zennia->x, 1.0f, _zennia->y) + glm::vec3(cos(_zennia->angle), 0.0f, sin(_zennia->angle)));
+            _freeCam->setPosition(glm::vec3(_zennia->x, 1.0, _zennia->y));
+            _freeCam->setPhi(M_PI / 2);
+            _freeCam->setTheta(_zennia->angle + M_PI/2);
         }
 
     } else {
@@ -423,8 +426,9 @@ void Lab05Engine::fixCamera()
                     zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
         }
         if (cameraToggle == 2) {
-            _freeCam->setPosition(glm::vec3(_jammss->x, 1.0f, _jammss->y));
-            _freeCam->setLookAtPoint(glm::vec3(_jammss->x, 1.0f, _jammss->y) + glm::vec3(cos(_jammss->angle), 0.0f, sin(_jammss->angle)));
+            _freeCam->setPosition(glm::vec3(_jammss->x, 1.0, _jammss->y));
+            _freeCam->setPhi(M_PI / 2);
+            _freeCam->setTheta(_jammss->angle - M_PI/2);
         }
     }
     _freeCam->recomputeOrientation();
@@ -462,9 +466,9 @@ void Lab05Engine::run()
         _renderScene(viewMatrix, projectionMatrix);
         glClear(GL_DEPTH_BUFFER_BIT); // clear the current color contents and depth buffer in the window
         glViewport(0, 0, framebufferWidth / 3, framebufferHeight / 3);
-        if (cameraToggle != 2 || !heroToggle)
+        if (!heroToggle)
             _renderScene(glm::lookAt(glm::vec3(_zennia->x, 10, _zennia->y), glm::vec3(_zennia->x, 0, _zennia->y), glm::vec3(1, 0, 0)), projectionMatrix);
-        if (cameraToggle != 2 || heroToggle)
+        else
             _renderScene(glm::lookAt(glm::vec3(_jammss->x, 10, _jammss->y), glm::vec3(_jammss->x, 0, _jammss->y), glm::vec3(1, 0, 0)), projectionMatrix);
         _updateScene();
 
