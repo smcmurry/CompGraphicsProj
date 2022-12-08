@@ -183,7 +183,7 @@ private:
                                   glm::vec3 dimensions, glm::vec3 offset) const;*/
 
     glm::vec3 torchPos;
-    void drawTorch(glm::mat4, glm::mat4, glm::mat4) const;
+    void _drawTorch(glm::mat4, glm::mat4, glm::mat4) const;
 
     /// \desc precomputes the matrix uniforms CPU-side and then sends them
     /// to the GPU to be used in the shader for each vertex.  It is more efficient
