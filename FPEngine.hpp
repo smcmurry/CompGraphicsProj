@@ -45,6 +45,7 @@ private:
     void _setupScene() final;
 
     void _setupTextures() final;
+    void _setupGroundTextures(std::string filename);
     void _createSkybox();
     void _cleanupBuffers() final;
     void _cleanupShaders() final;
@@ -55,6 +56,7 @@ private:
                                                             GLint mvpMtxLocation, GLint modelMtxLocation, GLint normalMtxLocation) const;
     /// ********************** SKYBOX ********************** ///
     GLuint skyboxTextureID;
+    GLuint groundTextureID;
     /// \desc total number of VAOs in our scene
     static constexpr GLuint NUM_VAOS = 1;
     /// \desc used to index through our VAO/VBO/IBO array to give named access
@@ -176,6 +178,7 @@ private:
         GLint lightSizes;
         GLint lightTypes;
         GLint lightCount;
+        GLint useTexture;
     } _lightingShaderUniformLocations;
     /// \desc stores the locations of all of our shader attributes
     struct LightingShaderAttributeLocations
@@ -183,7 +186,7 @@ private:
         /// \desc vertex position location
         GLint vPos;
         GLint vNormal;
-
+        GLint texCoord;
     } _lightingShaderAttributeLocations;
 
     /*glm::mat4 getPrismModelMatrix(glm::mat4 translateMatrix,
