@@ -25,7 +25,6 @@ Jammss::Jammss( GLuint shaderProgramHandle, GLint mMtxUniformLocation, GLint nor
     _shaderProgramUniformLocations.normalMtx        = normalMtxUniformLocation;
     _shaderProgramUniformLocations.materialColor    = materialColorUniformLocation;
 
-    _rotatePlaneAngle = M_PI / 2.0f;
 
     _rotateBodyAngle = -M_PI / 4.0f;
 

@@ -8,14 +8,15 @@
 
 #include "Zennia.hpp"
 #include "Jammss.hpp"
+#include "Plane.hpp"
 
 #include <vector>
 
-class Lab05Engine : public CSCI441::OpenGLEngine
+class FPEngine : public CSCI441::OpenGLEngine
 {
 public:
-    Lab05Engine();
-    ~Lab05Engine();
+    FPEngine();
+    ~FPEngine();
 
     void run() final;
 
@@ -75,6 +76,7 @@ private:
     /// \desc our plane model
     Zennia *_zennia;
     Jammss *_jammss;
+    Plane *_plane;
 
     int heroToggle = 0;
     int cameraToggle = 0;
@@ -119,7 +121,7 @@ private:
         GLint lightSizes;
         GLint lightTypes;
         GLint lightCount;
-} _lightingShaderUniformLocations;
+    } _lightingShaderUniformLocations;
     /// \desc stores the locations of all of our shader attributes
     struct LightingShaderAttributeLocations
     {
@@ -128,6 +130,13 @@ private:
         GLint vNormal;
 
     } _lightingShaderAttributeLocations;
+
+    /*glm::mat4 getPrismModelMatrix(glm::mat4 translateMatrix,
+                                  glm::mat4 rotationMatrix,
+                                  glm::vec3 dimensions, glm::vec3 offset) const;*/
+
+    glm::vec3 torchPos;
+    void drawTorch(glm::mat4, glm::mat4, glm::mat4) const;
 
     /// \desc precomputes the matrix uniforms CPU-side and then sends them
     /// to the GPU to be used in the shader for each vertex.  It is more efficient

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
-project(lab05)
+project(CSCI441FinalProject)
 set(CMAKE_CXX_STANDARD 17)
-set(SOURCE_FILES main.cpp Lab05Engine.cpp Lab05Engine.hpp Zennia.cpp Zennia.hpp Engine.cpp Engine.hpp Jammss.hpp Jammss.cpp)
+set(SOURCE_FILES main.cpp FPEngine.cpp FPEngine.hpp Zennia.cpp Zennia.hpp Engine.cpp Engine.hpp Jammss.hpp Jammss.cpp Plane.cpp Plane.hpp)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 # Windows with MinGW Installations

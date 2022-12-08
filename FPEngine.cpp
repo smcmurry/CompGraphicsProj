@@ -1,7 +1,8 @@
-#include "Lab05Engine.hpp"
+#include "FPEngine.hpp"
 
 #include <CSCI441/objects.hpp>
 #include <CSCI441/SimpleShader.hpp>
+#include "Plane.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -24,10 +25,10 @@ GLfloat getRand()
 //
 // Public Interface
 
-Lab05Engine::Lab05Engine()
+FPEngine::FPEngine()
     : CSCI441::OpenGLEngine(4, 1,
                             640, 480,
-                            "Lab05: Flight Simulator v0.41 alpha")
+                            "FP: There And Back Again")
 {
 
     for (auto &_key : _keys)
@@ -38,12 +39,12 @@ Lab05Engine::Lab05Engine()
     zoom = 3.0;
 }
 
-Lab05Engine::~Lab05Engine()
+FPEngine::~FPEngine()
 {
     delete _freeCam;
 }
 
-void Lab05Engine::handleKeyEvent(GLint key, GLint action)
+void FPEngine::handleKeyEvent(GLint key, GLint action)
 {
     if (key != GLFW_KEY_UNKNOWN)
         _keys[key] = ((action == GLFW_PRESS) || (action == GLFW_REPEAT));
@@ -62,9 +63,8 @@ void Lab05Engine::handleKeyEvent(GLint key, GLint action)
                 cameraToggle = 0;
             break;
         case GLFW_KEY_X: // switch heroes
-            if (heroToggle == 0)
-                heroToggle = 1;
-            else
+            heroToggle++;
+            if (heroToggle == 3)
                 heroToggle = 0;
             break;
         case GLFW_KEY_Q:
@@ -77,7 +77,7 @@ void Lab05Engine::handleKeyEvent(GLint key, GLint action)
     }
 }
 
-void Lab05Engine::handleMouseButtonEvent(GLint button, GLint action)
+void FPEngine::handleMouseButtonEvent(GLint button, GLint action)
 {
     // if the event is for the left mouse button
     if (button == GLFW_MOUSE_BUTTON_LEFT)
@@ -87,7 +87,7 @@ void Lab05Engine::handleMouseButtonEvent(GLint button, GLint action)
     }
 }
 
-void Lab05Engine::handleCursorPositionEvent(glm::vec2 currMousePosition)
+void FPEngine::handleCursorPositionEvent(glm::vec2 currMousePosition)
 {
     // if mouse hasn't moved in the window, prevent camera from flipping out
     if (_mousePosition.x == MOUSE_UNINITIALIZED)
@@ -122,7 +122,7 @@ void Lab05Engine::handleCursorPositionEvent(glm::vec2 currMousePosition)
 //
 // Engine Setup
 
-void Lab05Engine::_setupGLFW()
+void FPEngine::_setupGLFW()
 {
     CSCI441::OpenGLEngine::_windowResizable = true;
     CSCI441::OpenGLEngine::_setupGLFW();
@@ -133,7 +133,7 @@ void Lab05Engine::_setupGLFW()
     glfwSetCursorPosCallback(_window, lab05_engine_cursor_callback);
 }
 
-void Lab05Engine::_setupOpenGL()
+void FPEngine::_setupOpenGL()
 {
     glEnable(GL_DEPTH_TEST); // enable depth testing
     glDepthFunc(GL_LESS);    // use less than depth test
@@ -144,9 +144,9 @@ void Lab05Engine::_setupOpenGL()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // clear the frame buffer to black
 }
 
-void Lab05Engine::_setupShaders()
+void FPEngine::_setupShaders()
 {
-    _lightingShaderProgram = new CSCI441::ShaderProgram("shaders/lab05.v.glsl", "shaders/lab05.f.glsl");
+    _lightingShaderProgram = new CSCI441::ShaderProgram("shaders/FP.v.glsl", "shaders/FP.f.glsl");
     _lightingShaderUniformLocations.mMatrix = _lightingShaderProgram->getUniformLocation("mMatrix");
     _lightingShaderUniformLocations.vMatrix = _lightingShaderProgram->getUniformLocation("vMatrix");
     _lightingShaderUniformLocations.pMatrix = _lightingShaderProgram->getUniformLocation("pMatrix");
@@ -164,7 +164,7 @@ void Lab05Engine::_setupShaders()
     _lightingShaderAttributeLocations.vNormal = _lightingShaderProgram->getAttributeLocation("vNormal");
 }
 
-void Lab05Engine::_setupBuffers()
+void FPEngine::_setupBuffers()
 {
     CSCI441::setVertexAttributeLocations(_lightingShaderAttributeLocations.vPos, _lightingShaderAttributeLocations.vNormal);
 
@@ -181,12 +181,17 @@ void Lab05Engine::_setupBuffers()
             _lightingShaderUniformLocations.normalMatrix,
             _lightingShaderUniformLocations.materialColor);
 
+    _plane = new Plane(_lightingShaderProgram->getShaderProgramHandle(),
+                         _lightingShaderUniformLocations.mMatrix,
+                         _lightingShaderUniformLocations.normalMatrix,
+                         _lightingShaderUniformLocations.materialColor);
+
     Engine::MeshData *worldData = Engine::readOBJ("./world_meshes.obj");
     worldMeshes = Engine::_getVao(*worldData);
     _generateEnvironment();
 }
 
-void Lab05Engine::_generateEnvironment()
+void FPEngine::_generateEnvironment()
 {
     //******************************************************************
     // parameters to make up our grid size and spacing, feel free to
@@ -234,7 +239,7 @@ void Lab05Engine::_generateEnvironment()
     }
 }
 
-void Lab05Engine::_setupScene()
+void FPEngine::_setupScene()
 {
     _freeCam = new CSCI441::FreeCam();
     _freeCam->setPosition(glm::vec3(60.0f, 1.0f, 30.0f));
@@ -244,11 +249,11 @@ void Lab05Engine::_setupScene()
     _cameraSpeed = glm::vec2(0.25f, 0.02f);
 
     //Send all the lights to the gpu
-    std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0), glm::vec3(0.0, 1.0, 0.0)};
-    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0), glm::vec3(0.0f, -0.1f, 1.0f)};
-    std::vector<glm::vec3> lightColors = {glm::vec3(5.f, 6.f, 5.0f), glm::vec3(500.0f, 250.0f, 250.0f), glm::vec3(2000.f, 2000.f, 5000.f)};
-    std::vector<uint32_t> lightTypes = {0, 1, 2};
-    std::vector<float> lightSizes = {0.f, 0.f, 1.f};
+    std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0), glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 9.5, 0.0)};
+    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0), glm::vec3(0.0f, -0.1f, 1.0f), glm::vec3(0)};
+    std::vector<glm::vec3> lightColors = {glm::vec3(5.f, 6.f, 5.0f), glm::vec3(500.0f, 250.0f, 250.0f), glm::vec3(2000.f, 2000.f, 5000.f), glm::vec3(150.f, 150.f, 150.f)};
+    std::vector<uint32_t> lightTypes = {0, 1, 2, 1};
+    std::vector<float> lightSizes = {0.f, 0.f, 1.f, 0.f};
     uint32_t numLights = lightDirections.size();
     glProgramUniform3f(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.ambientColor, 0.1, 0.1, 0.1);
     glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightPositions, numLights, &lightPositions[0][0]);
@@ -264,13 +269,13 @@ void Lab05Engine::_setupScene()
 //
 // Engine Cleanup
 
-void Lab05Engine::_cleanupShaders()
+void FPEngine::_cleanupShaders()
 {
     fprintf(stdout, "[INFO]: ...deleting Shaders.\n");
     delete _lightingShaderProgram;
 }
 
-void Lab05Engine::_cleanupBuffers()
+void FPEngine::_cleanupBuffers()
 {
     fprintf(stdout, "[INFO]: ...deleting VAOs....\n");
     CSCI441::deleteObjectVAOs();
@@ -282,14 +287,18 @@ void Lab05Engine::_cleanupBuffers()
     _zennia->freeData();
     delete _zennia;
     delete _jammss;
+    delete _plane;
 }
 
 //*************************************************************************************
 //
 // Rendering / Drawing Functions - this is where the magic happens!
 
-void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
+void FPEngine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
 {
+    if(!_lightingShaderProgram){
+        return;
+    }
     // use our lighting shader program
     _lightingShaderProgram->useProgram();
     // update viewMtx from camera position
@@ -327,24 +336,42 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
 
     glm::mat4 modelMtx(1.0f);
     // don't draw the character in first person
-    if (!heroToggle || cameraToggle != 2)
+    if (heroToggle == 0 || cameraToggle != 2)
         _zennia->drawZennia(modelMtx, viewMtx, projMtx);
-    if (heroToggle || cameraToggle != 2)
+    if (heroToggle == 1 || cameraToggle != 2)
         _jammss->drawJammss(modelMtx, viewMtx, projMtx);
+    if (heroToggle == 2 || cameraToggle != 2) {
+        auto t1 = glm::translate(modelMtx, _plane->getPosition());
+        t1 = glm::scale(t1, glm::vec3(3, 3, 3));
+        _plane->drawPlane(t1, viewMtx, projMtx);
+    }
     //// END DRAWING THE PLANE ////
+
+    //// Animate Torch Light ////
 }
 
-void Lab05Engine::_updateScene()
+void FPEngine::_updateScene()
 {
     // fly
+    GLfloat theta;
+    float movementSpeed;
     if (_keys[GLFW_KEY_W])
     {
         if (cameraToggle == 0 || cameraToggle == 2) {
-            if (heroToggle)
+            if (heroToggle == 0){
                 _zennia->flyForward();
-            else
+                fixCamera();
+            }
+            else if (heroToggle == 1){
                 _jammss->walkForward();
-            fixCamera();
+                fixCamera();
+            }
+            else if (heroToggle == 2) {
+                theta = _plane->getOrientation().theta;
+                movementSpeed = 0.15;
+                _plane->flyForward(glm::vec3(movementSpeed*cos(-theta), 0.0, movementSpeed*sin(-theta)));
+                fixCamera();
+            }
         }
         if (cameraToggle == 1) {
             _freeCam->rotate(0.0f, _cameraSpeed.y);
@@ -353,10 +380,15 @@ void Lab05Engine::_updateScene()
     if (_keys[GLFW_KEY_S])
     {
         if (cameraToggle == 0 || cameraToggle == 2) {
-            if (heroToggle)
+            if (heroToggle == 0)
                 _zennia->flyBackward();
-            else
+            else if (heroToggle == 1)
                 _jammss->walkForward();
+            else if (heroToggle == 2) {
+                theta = _plane->getOrientation().theta;;
+                movementSpeed = 0.15;
+                _plane->flyBackward(glm::vec3(-movementSpeed*cos(-theta),0.0, -movementSpeed*sin(-theta)));
+            }
             fixCamera();
         }
         if (cameraToggle == 1) {
@@ -368,10 +400,12 @@ void Lab05Engine::_updateScene()
     {
         if (cameraToggle == 0 || cameraToggle == 2) {
            if(cameraToggle == 0)  _freeCam->rotate(_cameraSpeed.y, 0.0f);
-            if (heroToggle)
+            if (heroToggle == 0)
                 _zennia->angle += _cameraSpeed.y;
-            else
+            else if (heroToggle == 1)
                 _jammss->angle += _cameraSpeed.y;
+            else if (heroToggle == 2)
+                _plane->rotate(-0.1);
             fixCamera();
         }
         if (cameraToggle == 1) {
@@ -383,10 +417,12 @@ void Lab05Engine::_updateScene()
     {
         if (cameraToggle == 0 || cameraToggle == 2) {
             if(cameraToggle == 0) _freeCam->rotate(-_cameraSpeed.y, 0.0f);
-            if (heroToggle)
+            if (heroToggle == 0)
                 _zennia->angle -= _cameraSpeed.y;
-            else
+            else if (heroToggle == 1)
                 _jammss->angle -= _cameraSpeed.y;
+            else if (heroToggle == 2)
+                _plane->rotate(0.1);
             fixCamera();
         }
         if (cameraToggle == 1) {
@@ -409,10 +445,10 @@ void Lab05Engine::_updateScene()
 }
 
 // resets the camera position to be correct given the camera type
-void Lab05Engine::fixCamera()
+void FPEngine::fixCamera()
 {
     _freeCam->recomputeOrientation();
-    if (heroToggle) {
+    if (heroToggle == 0) {
         if (cameraToggle == 0) {
             _freeCam->setPosition(glm::vec3(_zennia->x, 0, _zennia->y) +
                                   zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
@@ -423,7 +459,7 @@ void Lab05Engine::fixCamera()
             _freeCam->setTheta(_zennia->angle + M_PI/2);
         }
 
-    } else {
+    } else if (heroToggle == 1){
         if (cameraToggle == 0) {
             _freeCam->setPosition(
                     glm::vec3(_jammss->x, 0, _jammss->y) +
@@ -434,11 +470,22 @@ void Lab05Engine::fixCamera()
             _freeCam->setPhi(M_PI / 2);
             _freeCam->setTheta(_jammss->angle - M_PI/2);
         }
+    } else if (heroToggle == 2){
+        if (cameraToggle == 0) {
+            _freeCam->setPosition(
+                    glm::vec3(_plane->getPosition().x, _plane->getPosition().y, _plane->getPosition().z) +
+                    zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
+        }
+        if (cameraToggle == 2) {
+            _freeCam->setPosition(glm::vec3(_plane->getPosition().x, 1.0, _plane->getPosition().z));
+            _freeCam->setPhi(_plane->getOrientation().phi);
+            _freeCam->setTheta(_plane->getOrientation().theta);
+        }
     }
     _freeCam->recomputeOrientation();
 }
 
-void Lab05Engine::run()
+void FPEngine::run()
 {
     //  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
     //	until the user decides to close the window and quit the program.  Without a loop, the
@@ -471,10 +518,12 @@ void Lab05Engine::run()
         glClear(GL_DEPTH_BUFFER_BIT); // clear the current color contents and depth buffer in the window
         //draw minimap
         glViewport(0, 0, framebufferWidth / 3, framebufferHeight / 3);
-        if (!heroToggle)
+        if (heroToggle == 0)
             _renderScene(glm::lookAt(glm::vec3(_zennia->x, 10, _zennia->y), glm::vec3(_zennia->x, 0, _zennia->y), glm::vec3(1, 0, 0)), projectionMatrix);
-        else
+        else if (heroToggle == 1)
             _renderScene(glm::lookAt(glm::vec3(_jammss->x, 10, _jammss->y), glm::vec3(_jammss->x, 0, _jammss->y), glm::vec3(1, 0, 0)), projectionMatrix);
+        else if (heroToggle == 2)
+            _renderScene(glm::lookAt(glm::vec3(_plane->getPosition().x, 10, _plane->getPosition().y), glm::vec3(_plane->getPosition().x, 0, _plane->getPosition().y), glm::vec3(1, 0, 0)), projectionMatrix);
         _updateScene();
 
         glfwSwapBuffers(_window); // flush the OpenGL commands and make sure they get rendered!
@@ -486,7 +535,7 @@ void Lab05Engine::run()
 //
 // Private Helper FUnctions
 
-void Lab05Engine::_computeAndSendMatrixUniforms(glm::mat4 modelMtx) const
+void FPEngine::_computeAndSendMatrixUniforms(glm::mat4 modelMtx) const
 {
     // then send it to the shader on the GPU to apply to every vertex
     _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.mMatrix, modelMtx);
@@ -495,13 +544,45 @@ void Lab05Engine::_computeAndSendMatrixUniforms(glm::mat4 modelMtx) const
     _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.normalMatrix, normalMtx);
 }
 
+/*glm::mat4 Engine::getPrismModelMatrix(glm::mat4 translateMatrix,
+                                      glm::mat4 rotationMatrix,
+                                      glm::vec3 dimensions,
+                                      glm::vec3 offset) const {
+    glm::mat4 pointTranslation = glm::translate(
+            glm::mat4(1.f),
+            glm::vec3(offset.x, dimensions.y / 2 + offset.y, offset.z));
+    glm::mat4 scale = glm::scale(glm::mat4(1.f), dimensions);
+    return translateMatrix * rotationMatrix * pointTranslation * scale;
+}*/
+
+void FPEngine::drawTorch(glm::mat4 modelMatrix, glm::mat4 viewMatrix, glm::mat4 projMatrix) const {
+    glm::vec3 color = glm::vec3(112 / 255.f, 58 / 255.f, 29 / 255.f);
+    glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &color[0]);
+    glm::mat4 translateToSpot = glm::translate(glm::mat4(1.f), torchPos);
+    _computeAndSendMatrixUniforms(modelMatrix);
+    CSCI441::drawSolidCylinder(1.f, 1.f, 1.f, 20, 20);
+
+    color = glm::vec3(232 / 255.f, 47 / 255.f, 23 / 255.f);
+    glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &color[0]);
+    _computeAndSendMatrixUniforms(modelMatrix);
+
+    glm::vec3 pointLightColor =
+            glm::vec3((150 + 100*glm::sin(3*glfwGetTime()))  / 255.f,
+                      (150 + 100*glm::sin(3*glfwGetTime())) / 255.f,
+                      (150 + 100*glm::sin(3*glfwGetTime())) / 255.f);
+    std::vector<glm::vec3> lightColors = {glm::vec3(5.f, 6.f, 5.0f), glm::vec3(500.0f, 250.0f, 250.0f), glm::vec3(2000.f, 2000.f, 5000.f), glm::vec3(150.f, 150.f, 150.f)};
+    uint32_t numLights = lightColors.size();
+    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightColors, numLights, &lightColors[0][0]);
+    CSCI441::drawSolidSphere(1.2f + (glm::sin(3*glfwGetTime())/5.f) , 20, 20);
+};
+
 //*************************************************************************************
 //
 // Callbacks
 
 void lab05_engine_keyboard_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    auto engine = (Lab05Engine *)glfwGetWindowUserPointer(window);
+    auto engine = (FPEngine *)glfwGetWindowUserPointer(window);
 
     // pass the key and action through to the engine
     engine->handleKeyEvent(key, action);
@@ -509,7 +590,7 @@ void lab05_engine_keyboard_callback(GLFWwindow *window, int key, int scancode, i
 
 void lab05_engine_cursor_callback(GLFWwindow *window, double x, double y)
 {
-    auto engine = (Lab05Engine *)glfwGetWindowUserPointer(window);
+    auto engine = (FPEngine *)glfwGetWindowUserPointer(window);
 
     // pass the cursor position through to the engine
     engine->handleCursorPositionEvent(glm::vec2(x, y));
@@ -517,7 +598,7 @@ void lab05_engine_cursor_callback(GLFWwindow *window, double x, double y)
 
 void lab05_engine_mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
-    auto engine = (Lab05Engine *)glfwGetWindowUserPointer(window);
+    auto engine = (FPEngine *)glfwGetWindowUserPointer(window);
 
     // pass the mouse button and action through to the engine
     engine->handleMouseButtonEvent(button, action);
