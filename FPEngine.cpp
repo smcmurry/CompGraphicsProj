@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include "stb_image.h"
 
 //*************************************************************************************
 //
@@ -161,7 +162,13 @@ void FPEngine::_setupShaders()
     _lightingShaderUniformLocations.lightCount = _lightingShaderProgram->getUniformLocation("lightCount");
 
     _lightingShaderAttributeLocations.vPos = _lightingShaderProgram->getAttributeLocation("vPos");
+
     _lightingShaderAttributeLocations.vNormal = _lightingShaderProgram->getAttributeLocation("vNormal");
+    //***************************************************************************
+    // Setup Texture Shader Program
+    _textureShaderProgram = new CSCI441::ShaderProgram("shaders/skyboxShader.v.glsl", "shaders/skyboxShader.f.glsl");
+    _textureShaderUniformLocations.mvpMatrix                = _textureShaderProgram->getUniformLocation("mvpMatrix");
+    _textureShaderUniformLocations.texMap                   = _textureShaderProgram->getUniformLocation("texMap");
 }
 
 void FPEngine::_setupBuffers()
@@ -265,6 +272,102 @@ void FPEngine::_setupScene()
     fixCamera();
 }
 
+void FPEngine::_setupTextures() {
+    glGenTextures(1, &skyboxTextureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextureID);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    _createSkybox();
+    _setupCubeFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X, "assets/textures/Yokohama2/posx.jpg");
+    _setupCubeFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, "assets/textures/Yokohama2/negx.jpg");
+    _setupCubeFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, "assets/textures/Yokohama2/posy.jpg");
+    _setupCubeFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, "assets/textures/Yokohama2/negy.jpg");
+    _setupCubeFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, "assets/textures/Yokohama2/posz.jpg");
+    _setupCubeFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, "assets/textures/Yokohama2/negz.jpg");
+}
+
+void FPEngine::_setupCubeFace(GLint TextureTarget, const char* filename)
+{
+    //stbi_set_flip_vertically_on_load(true);
+
+    // will hold image parameters after load
+    GLint imageWidth, imageHeight, imageChannels;
+    // load image from file
+    GLubyte* data = stbi_load( filename, &imageWidth, &imageHeight, &imageChannels, 0);
+    if (data)
+    {
+        const GLint STORAGE_TYPE = (imageChannels == 4 ? GL_RGBA : GL_RGB);
+
+        glTexImage2D(TextureTarget,
+                     0,
+                     STORAGE_TYPE,
+                     imageWidth,
+                     imageHeight,
+                     0,
+                     STORAGE_TYPE,
+                     GL_UNSIGNED_BYTE,
+                     data
+        );
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cerr << "Could not open file " << filename << std::endl;
+        exit(-1);
+    }
+}
+
+void FPEngine::_createSkybox()
+{
+    const int numSkyboxVertices = 8;
+    GLfloat skyboxVertices[3 * numSkyboxVertices] =
+            {
+                    //   Coordinates
+                    -1.0f, -1.0f,  1.0f, // Front bottom left   0
+                    1.0f, -1.0f,  1.0f,  // Front bottom right  1
+                    1.0f, -1.0f, -1.0f,  // Back bottom right   2
+                    -1.0f, -1.0f, -1.0f, // Back bottom left   3
+                    -1.0f,  1.0f,  1.0f, // Front top left    4
+                    1.0f,  1.0f,  1.0f, // Front top right    5
+                    1.0f,  1.0f, -1.0f, // Back top right    6
+                    -1.0f,  1.0f, -1.0f // Back top left     7
+            };
+    GLuint skyboxIndices[] =
+            {
+                    1, 2, 6,
+                    6, 5, 1,
+                    // Left
+                    0, 4, 7,
+                    7, 3, 0,
+                    // Top
+                    4, 5, 6,
+                    6, 7, 4,
+                    // Bottom
+                    0, 3, 2,
+                    2, 1, 0,
+                    // Back
+                    0, 1, 5,
+                    5, 4, 0,
+                    // Front
+                    3, 7, 6,
+                    6, 2, 3
+            };
+
+    glGenVertexArrays(1, &_vaos[SKY_BOX]);
+    glGenBuffers(1, &_vbos[SKY_BOX]);
+    glGenBuffers(1, &_ibos[SKY_BOX]);
+    glBindVertexArray(_vaos[SKY_BOX]);
+    glBindBuffer(GL_ARRAY_BUFFER, _vbos[SKY_BOX]);
+    glBufferData(GL_ARRAY_BUFFER, 3*numSkyboxVertices * sizeof(GLfloat), &skyboxVertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ibos[SKY_BOX]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, numSkyboxIndices * sizeof(GLuint), &skyboxIndices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(_ShaderProgramAttributeLocations.vPos);
+    glVertexAttribPointer(_ShaderProgramAttributeLocations.vPos, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*) 0);
+
+}
 //*************************************************************************************
 //
 // Engine Cleanup
@@ -296,9 +399,28 @@ void FPEngine::_cleanupBuffers()
 
 void FPEngine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
 {
-    if(!_lightingShaderProgram){
+    // if either shader program is null, do not continue any further to prevent run time errors
+    if(!_lightingShaderProgram || !_textureShaderProgram) {
         return;
     }
+    //***************************************************************************
+    // draw the Skybox
+    glDepthMask(GL_FALSE);
+    _textureShaderProgram->useProgram();
+    GLfloat skyboxScale = 800.0f;
+    glm::mat4 skyBoxModelMtx = glm::mat4(1.0f);
+    skyBoxModelMtx = glm::scale(skyBoxModelMtx, glm::vec3(skyboxScale, skyboxScale, skyboxScale));
+    _computeAndSendTransformationMatrices( _textureShaderProgram,
+                                           skyBoxModelMtx, viewMtx, projMtx,
+                                           _textureShaderUniformLocations.mvpMatrix,
+                                           -1,
+                                           -1);
+    glBindVertexArray(_vaos[SKY_BOX]);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTextureID);
+    glDrawElements(GL_TRIANGLES, numSkyboxIndices, GL_UNSIGNED_INT, 0);
+    glDepthMask(GL_TRUE);
+
+    //***************************************************************************
     // use our lighting shader program
     _lightingShaderProgram->useProgram();
     // update viewMtx from camera position
@@ -444,6 +566,30 @@ void FPEngine::_updateScene()
 
 }
 
+void FPEngine::_computeAndSendTransformationMatrices(CSCI441::ShaderProgram* shaderProgram,
+                                               glm::mat4 modelMatrix, glm::mat4 viewMatrix, glm::mat4 projectionMatrix,
+                                               GLint mvpMtxLocation, GLint modelMtxLocation, GLint normalMtxLocation) const {
+    // ensure our shader program is not null
+    if( shaderProgram ) {
+        // precompute the MVP matrix CPU side
+        glm::mat4 mvpMatrix = projectionMatrix * viewMatrix * modelMatrix;
+        // precompute the Normal matrix CPU side
+        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
+
+        // send the matrices to the shader
+        shaderProgram->setProgramUniform(mvpMtxLocation, mvpMatrix);
+        if (modelMtxLocation != -1)
+        {
+            shaderProgram->setProgramUniform(modelMtxLocation, modelMatrix);
+        }
+        if (normalMtxLocation != -1)
+        {
+            shaderProgram->setProgramUniform(normalMtxLocation, normalMatrix);
+        }
+    }
+}
+
+
 // resets the camera position to be correct given the camera type
 void FPEngine::fixCamera()
 {
@@ -506,8 +652,8 @@ void FPEngine::run()
 
         // set the projection matrix based on the window size
         // use a perspective projection that ranges
-        // with a FOV of 45 degrees, for our current aspect ratio, and Z ranges from [0.001, 1000].
-        glm::mat4 projectionMatrix = glm::perspective(45.0f, (GLfloat)framebufferWidth / (GLfloat)framebufferHeight, 0.001f, 1000.0f);
+        // with a FOV of 45 degrees, for our current aspect ratio, and Z ranges from [0.001, 10000].
+        glm::mat4 projectionMatrix = glm::perspective(45.0f, (GLfloat)framebufferWidth / (GLfloat)framebufferHeight, 0.001f, 10000.0f);
 
         // set up our look at matrix to position our camera
         glm::mat4 viewMatrix = _freeCam->getViewMatrix();
