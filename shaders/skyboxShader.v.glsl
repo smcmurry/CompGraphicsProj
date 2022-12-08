@@ -13,8 +13,4 @@ void main() {
     gl_Position = mvpMatrix * vec4(vPos, 1.0);
 
     TexCoord = vPos;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 6ac618eae3ad1cd7eba4f76a46860af7cff46203
