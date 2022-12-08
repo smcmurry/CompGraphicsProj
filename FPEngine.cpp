@@ -38,7 +38,6 @@ FPEngine::FPEngine()
     _mousePosition = glm::vec2(MOUSE_UNINITIALIZED, MOUSE_UNINITIALIZED);
     _leftMouseButtonState = GLFW_RELEASE;
     zoom = 3.0;
-    torchPos = glm::vec3(10.0, 0.0, 0.0);
 }
 
 FPEngine::~FPEngine()
@@ -247,6 +246,25 @@ void FPEngine::_generateEnvironment()
             }
         }
     }
+    for(int i = LEFT_END_POINT; i < RIGHT_END_POINT; i += GRID_SPACING_WIDTH) {
+        for(int j = BOTTOM_END_POINT; j < TOP_END_POINT; j += GRID_SPACING_LENGTH) {
+            // don't just draw a building ANYWHERE.
+            if( i % 2 && j % 2 && getRand() < 0.01f ) {
+                // translate to spot
+                glm::mat4 transToSpotMtx = glm::translate( glm::mat4(1.0), glm::vec3(i, 0.0f, j) );
+
+                // scale to building size
+                glm::mat4 scaleToHeightMtx = glm::scale( glm::mat4(1.0), glm::vec3(1, 1, 1) );\
+
+                // compute full model matrix
+                glm::mat4 modelMatrix = scaleToHeightMtx * transToSpotMtx;
+                // store building properties
+                TorchData nextTorch = {modelMatrix, glm::vec3(i, 1.0f, j)};
+                _torches.emplace_back( nextTorch );
+                std::cout << i << " " << 1 << " " << j << std::endl;
+            }
+        }
+    }
 }
 
 void FPEngine::_setupScene()
@@ -258,12 +276,19 @@ void FPEngine::_setupScene()
     _freeCam->recomputeOrientation();
     _cameraSpeed = glm::vec2(0.25f, 0.02f);
 
+    std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0), glm::vec3(0.0, 1.0, 0.0)};
+    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0), glm::vec3(0.0f, -0.1f, 1.0f)};
+    std::vector<glm::vec3> lightColors = {glm::vec3(5.f, 6.f, 5.0f), glm::vec3(500.0f, 250.0f, 250.0f), glm::vec3(2000.f, 2000.f, 5000.f)};
+    std::vector<uint32_t> lightTypes = {0, 1, 2};
+    std::vector<float> lightSizes = {0.f, 0.f, 1.f};
     //Send all the lights to the gpu
-    std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0), glm::vec3(0.0, 1.0, 0.0), torchPos};
-    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0), glm::vec3(0.0f, -0.1f, 1.0f), glm::vec3(0)};
-    std::vector<glm::vec3> lightColors = {glm::vec3(5.f, 6.f, 5.0f), glm::vec3(500.0f, 250.0f, 250.0f), glm::vec3(2000.f, 2000.f, 5000.f), glm::vec3(150.f, 150.f, 150.f)};
-    std::vector<uint32_t> lightTypes = {0, 1, 2, 1};
-    std::vector<float> lightSizes = {0.f, 0.f, 1.f, 0.f};
+    for (int i = 0; i < _torches.size(); i++) {
+        lightPositions.push_back(_torches[i].torchPos);
+        lightDirections.push_back(glm::vec3(0));
+        lightColors.push_back(glm::vec3(150.f, 150.f, 150.f));
+        lightTypes.push_back(1);
+        lightSizes.push_back(0.f);
+    }
     uint32_t numLights = lightDirections.size();
     glProgramUniform3f(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.ambientColor, 0.1, 0.1, 0.1);
     glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightPositions, numLights, &lightPositions[0][0]);
@@ -473,7 +498,11 @@ void FPEngine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     //// END DRAWING THE PLANE ////
 
     //// Animate Torch Light ////
-    _drawTorch(modelMtx, viewMtx, projMtx);
+    int i = 0;
+    for( const TorchData& currentTorch : _torches ) {
+        _drawTorch(currentTorch, viewMtx, projMtx);
+        i++;
+    }
 }
 
 void FPEngine::_updateScene()
@@ -567,6 +596,32 @@ void FPEngine::_updateScene()
             }
         }
     }
+
+    glm::vec3 pointLightColor =
+            glm::vec3((150 + 100*glm::sin(3*glfwGetTime())),
+                      (150 + 100*glm::sin(3*glfwGetTime())),
+                      (150 + 100*glm::sin(3*glfwGetTime())));
+    std::vector<glm::vec3> lightPositions = {glm::vec3(0), glm::vec3(0.0, 0.1, 0.0), glm::vec3(0.0, 1.0, 0.0)};
+    std::vector<glm::vec3> lightDirections = {glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec3(0), glm::vec3(0.0f, -0.1f, 1.0f)};
+    std::vector<glm::vec3> lightColors = {glm::vec3(5.f, 6.f, 5.0f), glm::vec3(500.0f, 250.0f, 250.0f), glm::vec3(2000.f, 2000.f, 5000.f)};
+    std::vector<uint32_t> lightTypes = {0, 1, 2};
+    std::vector<float> lightSizes = {0.f, 0.f, 1.f};
+    //Send all the lights to the gpu
+    for (int i = 0; i < _torches.size(); i++) {
+        lightPositions.push_back(_torches[i].torchPos);
+        lightDirections.push_back(glm::vec3(0));
+        lightColors.push_back(pointLightColor);
+        lightTypes.push_back(1);
+        lightSizes.push_back(0.f);
+    }
+    uint32_t numLights = lightDirections.size();
+    glProgramUniform3f(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.ambientColor, 0.1, 0.1, 0.1);
+    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightPositions, numLights, &lightPositions[0][0]);
+    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightDirections, numLights, &lightDirections[0][0]);
+    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightColors, numLights, &lightColors[0][0]);
+    glProgramUniform1uiv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightTypes, numLights, &lightTypes[0]);
+    glProgramUniform1fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightSizes, numLights, &lightSizes[0]);
+    glProgramUniform1ui(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightCount, numLights);
 
 }
 
@@ -705,25 +760,17 @@ void FPEngine::_computeAndSendMatrixUniforms(glm::mat4 modelMtx) const
     return translateMatrix * rotationMatrix * pointTranslation * scale;
 }*/
 
-void FPEngine::_drawTorch(glm::mat4 modelMatrix, glm::mat4 viewMatrix, glm::mat4 projMatrix) const {
+void FPEngine::_drawTorch(TorchData torch, glm::mat4 viewMatrix, glm::mat4 projMatrix) const {
     glm::vec3 color = glm::vec3(112 / 255.f, 58 / 255.f, 29 / 255.f);
     glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &color[0]);
-    glm::mat4 translateToSpot = glm::translate(modelMatrix, torchPos);
-    _computeAndSendMatrixUniforms(translateToSpot);
+    _computeAndSendMatrixUniforms(torch.modelMatrix);
     CSCI441::drawSolidCylinder(0.2f, 0.2f, 2.f, 20, 20);
 
     color = glm::vec3(232 / 255.f, 47 / 255.f, 23 / 255.f);
     glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &color[0]);
     //_computeAndSendMatrixUniforms(modelMatrix);
-    translateToSpot = glm::translate(translateToSpot, glm::vec3(0.0, 2.0, 0.0));
+    glm::mat4 translateToSpot = glm::translate(torch.modelMatrix, glm::vec3(0.0, 2.0, 0.0));
     _computeAndSendMatrixUniforms(translateToSpot);
-    glm::vec3 pointLightColor =
-            glm::vec3((150 + 100*glm::sin(3*glfwGetTime())),
-                      (150 + 100*glm::sin(3*glfwGetTime())),
-                      (150 + 100*glm::sin(3*glfwGetTime())));
-    std::vector<glm::vec3> lightColors = {glm::vec3(5.f, 6.f, 5.0f), glm::vec3(500.0f, 250.0f, 250.0f), glm::vec3(2000.f, 2000.f, 5000.f), pointLightColor};
-    uint32_t numLights = lightColors.size();
-    glProgramUniform3fv(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.lightColors, numLights, &lightColors[0][0]);
     CSCI441::drawSolidSphere(0.6f + (glm::sin(3*glfwGetTime())/5.f) , 20, 20);
 };
 

@@ -145,6 +145,14 @@ private:
     /// \desc information list of all the buildings to draw
     std::vector<BuildingData> _buildings;
 
+    struct TorchData
+    {
+        glm::mat4 modelMatrix;
+        glm::vec3 torchPos;
+    };
+
+    std::vector<TorchData> _torches;
+
     /// \desc generates building information to make up our scene
     void _generateEnvironment();
 
@@ -182,8 +190,7 @@ private:
                                   glm::mat4 rotationMatrix,
                                   glm::vec3 dimensions, glm::vec3 offset) const;*/
 
-    glm::vec3 torchPos;
-    void _drawTorch(glm::mat4, glm::mat4, glm::mat4) const;
+    void _drawTorch(TorchData torch, glm::mat4, glm::mat4) const;
 
     /// \desc precomputes the matrix uniforms CPU-side and then sends them
     /// to the GPU to be used in the shader for each vertex.  It is more efficient
