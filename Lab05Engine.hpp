@@ -43,8 +43,55 @@ private:
     void _setupBuffers() final;
     void _setupScene() final;
 
+    void _setupTextures() final;
+    void _createSkybox();
     void _cleanupBuffers() final;
     void _cleanupShaders() final;
+    void _setupCubeFace(GLint TextureTarget, const char* filename);
+
+    void _computeAndSendTransformationMatrices(CSCI441::ShaderProgram* shaderProgram,
+                                                            glm::mat4 modelMatrix, glm::mat4 viewMatrix, glm::mat4 projectionMatrix,
+                                                            GLint mvpMtxLocation, GLint modelMtxLocation, GLint normalMtxLocation) const;
+    /// ********************** SKYBOX ********************** ///
+    GLuint skyboxTextureID;
+    /// \desc total number of VAOs in our scene
+    static constexpr GLuint NUM_VAOS = 1;
+    /// \desc used to index through our VAO/VBO/IBO array to give named access
+    enum VAO_ID {
+        /// \desc Sky box surrounding our scene
+        SKY_BOX = 0
+    };
+    /// \desc VAO for our objects
+    GLuint _vaos[NUM_VAOS];
+    /// \desc VBO for our objects
+    GLuint _vbos[NUM_VAOS];
+    /// \desc IBO for our objects
+    GLuint _ibos[NUM_VAOS];
+    /// \desc the number of points that make up our VAO
+    GLsizei _numVAOPoints[NUM_VAOS];
+
+    /// \desc stores the locations of all of our shader attributes, locations
+    /// shared by all shader programs being used.
+    struct ShaderProgramAttributeLocations {
+        /// \desc vertex position location
+        GLint vPos;
+        /// \desc vertex normal location
+        GLint vNormal;
+    } _ShaderProgramAttributeLocations;
+
+    /// \desc shader program that performs lighting
+    CSCI441::ShaderProgram* _textureShaderProgram = nullptr;   // the wrapper for our shader program
+    /// \desc stores the locations of all of our shader uniforms
+    struct TextureShaderUniformLocations {
+        /// \desc precomputed MVP matrix location
+        GLint mvpMatrix;
+        GLint texMap;
+    } _textureShaderUniformLocations;
+
+    /// ********************** SKYBOX ********************** ///
+
+    /// \desc Number of indices to draw for our skybox
+    const GLint numSkyboxIndices = 36;
 
     /// \desc draws everything to the scene from a particular point of view
     /// \param viewMtx the current view matrix for our camera
@@ -66,7 +113,6 @@ private:
 
     /// \desc the static fixed camera in our world
     CSCI441::FreeCam *_freeCam;
-    CSCI441::FreeCam *_freeCam2;
     /// \desc pair of values to store the speed the camera can move/rotate.
     /// \brief x = forward/backward delta, y = rotational delta
     glm::vec2 _cameraSpeed;
@@ -75,6 +121,7 @@ private:
     /// \desc our plane model
     Zennia *_zennia;
     Jammss *_jammss;
+
 
     int heroToggle = 0;
     int cameraToggle = 0;
