@@ -160,10 +160,11 @@ void Lab05Engine::_setupShaders()
     _lightingShaderUniformLocations.lightSizes = _lightingShaderProgram->getUniformLocation("lightSizes");
     _lightingShaderUniformLocations.lightTypes = _lightingShaderProgram->getUniformLocation("lightTypes");
     _lightingShaderUniformLocations.lightCount = _lightingShaderProgram->getUniformLocation("lightCount");
+    _lightingShaderUniformLocations.useTexture = _lightingShaderProgram->getUniformLocation("useTexture");
 
     _lightingShaderAttributeLocations.vPos = _lightingShaderProgram->getAttributeLocation("vPos");
-
     _lightingShaderAttributeLocations.vNormal = _lightingShaderProgram->getAttributeLocation("vNormal");
+    _lightingShaderAttributeLocations.texCoord = _lightingShaderProgram->getAttributeLocation("texCoord");
     //***************************************************************************
     // Setup Texture Shader Program
     _textureShaderProgram = new CSCI441::ShaderProgram("shaders/skyboxShader.v.glsl", "shaders/skyboxShader.f.glsl");
@@ -173,7 +174,7 @@ void Lab05Engine::_setupShaders()
 
 void Lab05Engine::_setupBuffers()
 {
-    CSCI441::setVertexAttributeLocations(_lightingShaderAttributeLocations.vPos, _lightingShaderAttributeLocations.vNormal);
+    CSCI441::setVertexAttributeLocations(_lightingShaderAttributeLocations.vPos, _lightingShaderAttributeLocations.vNormal, _lightingShaderAttributeLocations.texCoord);
 
 
     Engine::MeshData *readData = Engine::readOBJ("./assets.obj");
@@ -282,6 +283,41 @@ void Lab05Engine::_setupTextures() {
     _setupCubeFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, "assets/textures/Yokohama2/negy.jpg");
     _setupCubeFace(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, "assets/textures/Yokohama2/posz.jpg");
     _setupCubeFace(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, "assets/textures/Yokohama2/negz.jpg");
+    _setupGroundTextures("assets/textures/grass/Grass001_2K_Color.png");
+}
+
+void Lab05Engine::_setupGroundTextures(std::string filename)
+{
+    glGenTextures(1, &groundTextureID);
+    glBindTexture(GL_TEXTURE_2D, groundTextureID);
+    GLint imageWidth, imageHeight, imageChannels;
+    // load image from file
+    GLubyte* data = stbi_load( filename.c_str(), &imageWidth, &imageHeight, &imageChannels, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    if (data)
+    {
+        const GLint STORAGE_TYPE = (imageChannels == 4 ? GL_RGBA : GL_RGB);
+
+        glTexImage2D(GL_TEXTURE_2D,
+                     0,
+                     STORAGE_TYPE,
+                     imageWidth,
+                     imageHeight,
+                     0,
+                     STORAGE_TYPE,
+                     GL_UNSIGNED_BYTE,
+                     data
+        );
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cerr << "Could not open file " << filename << std::endl;
+        exit(-1);
+    }
 }
 
 void Lab05Engine::_setupCubeFace(GLint TextureTarget, const char* filename)
@@ -420,6 +456,7 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     // update viewMtx from camera position
     _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.vMatrix, viewMtx);
     _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.pMatrix, projMtx);
+    _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.useTexture, 1);
 
     //// BEGIN DRAWING THE GROUND PLANE ////
     // draw the ground plane
@@ -430,6 +467,7 @@ void Lab05Engine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     glUniform3fv(_lightingShaderUniformLocations.materialColor, 1, &groundColor[0]);
     Engine::drawObj(worldMeshes, 4);
     //// END DRAWING THE GROUND PLANE ////
+    _lightingShaderProgram->setProgramUniform(_lightingShaderUniformLocations.useTexture, 0);
 
     //// BEGIN DRAWING THE BUILDINGS ////
     for (const BuildingData &currentBuilding : _buildings)

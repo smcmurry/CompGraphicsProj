@@ -18,17 +18,19 @@ uniform uint lightCount;
 // attribute inputs
 layout(location = 0) in vec3 vPos;      // the position of this specific vertex in object space
 layout(location = 1) in vec3 vNormal;
+layout(location = 2) in vec2 texCoord;
 
 
 // varying outputs
 layout(location = 0) out vec3 color;    // color to apply to this vertex
+layout(location = 1) out vec2 texCoordOut;
 
 void main() {
     // transform & output the vertex in clip space
     vec4 worldSpace = mMatrix * vec4(vPos, 1.0);
     vec4 viewSpace = vMatrix * worldSpace;
     gl_Position = pMatrix * viewSpace;
-
+    texCoordOut = texCoord;
     vec3 normal = normalMatrix * vNormal;
 
     color = vec3(0);
