@@ -6,9 +6,10 @@
 #include <CSCI441/OpenGLEngine.hpp>
 #include <CSCI441/ShaderProgram.hpp>
 
-#include "Zennia.hpp"
 #include "Jammss.hpp"
 #include "Plane.hpp"
+#include "BingusTwo.hpp"
+#include "Raistlin.hpp"
 
 #include <vector>
 
@@ -122,9 +123,10 @@ private:
     float zoom;
 
     /// \desc our plane model
-    Zennia *_zennia;
     Jammss *_jammss;
     Plane *_plane;
+    BingusTwo *_bingusTwo;
+    Raistlin *_raistlin;
 
 
     int heroToggle = 0;

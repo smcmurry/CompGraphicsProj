@@ -14,7 +14,7 @@ namespace Engine {
     struct MeshData
     {
         std::vector<glm::vec3> points;
-        std::vector<glm::vec3> normals; 
+        std::vector<glm::vec3> normals;
         std::vector<glm::vec2> texCoords;
         std::vector<std::vector<uint32_t>> indicies;
     };

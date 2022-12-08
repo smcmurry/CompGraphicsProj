@@ -66,7 +66,7 @@ void FPEngine::handleKeyEvent(GLint key, GLint action)
             break;
         case GLFW_KEY_X: // switch heroes
             heroToggle++;
-            if (heroToggle == 3)
+            if (heroToggle == 4)
                 heroToggle = 0;
             fixCamera();
             break;
@@ -182,17 +182,21 @@ void FPEngine::_setupBuffers()
 
     Engine::MeshData *readData = Engine::readOBJ("./assets.obj");
 
-    _zennia = new Zennia(_lightingShaderProgram->getShaderProgramHandle(),
-                         _lightingShaderUniformLocations.mMatrix,
-                         _lightingShaderUniformLocations.normalMatrix,
-                         _lightingShaderUniformLocations.materialColor,
-                         readData);
     _jammss = new Jammss(_lightingShaderProgram->getShaderProgramHandle(),
             _lightingShaderUniformLocations.mMatrix,
             _lightingShaderUniformLocations.normalMatrix,
             _lightingShaderUniformLocations.materialColor);
 
     _plane = new Plane(_lightingShaderProgram->getShaderProgramHandle(),
+                         _lightingShaderUniformLocations.mMatrix,
+                         _lightingShaderUniformLocations.normalMatrix,
+                         _lightingShaderUniformLocations.materialColor);
+
+    _bingusTwo = new BingusTwo(_lightingShaderProgram->getShaderProgramHandle(), _lightingShaderUniformLocations.mMatrix,
+                               _lightingShaderUniformLocations.normalMatrix, _lightingShaderUniformLocations.materialColor,
+                               _lightingShaderUniformLocations.materialColor);
+
+    _raistlin = new Raistlin(_lightingShaderProgram->getShaderProgramHandle(),
                          _lightingShaderUniformLocations.mMatrix,
                          _lightingShaderUniformLocations.normalMatrix,
                          _lightingShaderUniformLocations.materialColor);
@@ -453,10 +457,10 @@ void FPEngine::_cleanupBuffers()
     CSCI441::deleteObjectVBOs();
 
     fprintf(stdout, "[INFO]: ...deleting models..\n");
-    _zennia->freeData();
-    delete _zennia;
     delete _jammss;
     delete _plane;
+    delete _bingusTwo;
+    delete _raistlin;
 }
 
 //*************************************************************************************
@@ -527,13 +531,16 @@ void FPEngine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
     glm::mat4 modelMtx(1.0f);
     // don't draw the character in first person
     if (heroToggle != 0 || cameraToggle != 2)
-        _zennia->drawZennia(modelMtx, viewMtx, projMtx);
+        _raistlin->drawRaistlin(modelMtx, viewMtx, projMtx);
     if (heroToggle != 1 || cameraToggle != 2)
         _jammss->drawJammss(modelMtx, viewMtx, projMtx);
     if (heroToggle != 2 || cameraToggle != 2) {
         auto t1 = glm::translate(modelMtx, _plane->getPosition());
         t1 = glm::scale(t1, glm::vec3(3, 3, 3));
         _plane->drawPlane(t1, viewMtx, projMtx);
+    }
+    if (heroToggle != 3 || cameraToggle != 2){
+        _bingusTwo->drawCharacter(viewMtx, projMtx);
     }
     //// END DRAWING THE PLANE ////
 
@@ -554,7 +561,7 @@ void FPEngine::_updateScene()
     {
         if (cameraToggle == 0 || cameraToggle == 2) {
             if (heroToggle == 0){
-                _zennia->flyForward();
+                _raistlin->walkForward();
                 fixCamera();
             }
             else if (heroToggle == 1){
@@ -566,6 +573,10 @@ void FPEngine::_updateScene()
                 movementSpeed = 0.15;
                 _plane->flyForward(glm::vec3(movementSpeed*cos(-theta), 0.0, movementSpeed*sin(-theta)));
                 fixCamera();
+            } else if (heroToggle == 3) {
+                _bingusTwo->moveForward();
+                _bingusTwo->setMoving(true);
+                fixCamera();
             }
         }
         if (cameraToggle == 1) {
@@ -576,13 +587,16 @@ void FPEngine::_updateScene()
     {
         if (cameraToggle == 0 || cameraToggle == 2) {
             if (heroToggle == 0)
-                _zennia->flyBackward();
+                _raistlin->walkForward();
             else if (heroToggle == 1)
                 _jammss->walkForward();
             else if (heroToggle == 2) {
                 theta = _plane->getOrientation().theta;;
                 movementSpeed = 0.15;
                 _plane->flyBackward(glm::vec3(-movementSpeed*cos(-theta),0.0, -movementSpeed*sin(-theta)));
+            } else if (heroToggle == 3) {
+                _bingusTwo->moveBackward();
+                _bingusTwo->setMoving(true);
             }
             fixCamera();
         }
@@ -596,11 +610,15 @@ void FPEngine::_updateScene()
         if (cameraToggle == 0 || cameraToggle == 2) {
            if(cameraToggle == 0)  _freeCam->rotate(_cameraSpeed.y, 0.0f);
             if (heroToggle == 0)
-                _zennia->angle += _cameraSpeed.y;
+                _raistlin->angle += _cameraSpeed.y;
             else if (heroToggle == 1)
                 _jammss->angle += _cameraSpeed.y;
             else if (heroToggle == 2)
                 _plane->rotate(-0.1);
+            else if (heroToggle == 3) {
+                _bingusTwo->turn(false);
+                _bingusTwo->setMoving(true);
+            }
             fixCamera();
         }
         if (cameraToggle == 1) {
@@ -613,11 +631,15 @@ void FPEngine::_updateScene()
         if (cameraToggle == 0 || cameraToggle == 2) {
             if(cameraToggle == 0) _freeCam->rotate(-_cameraSpeed.y, 0.0f);
             if (heroToggle == 0)
-                _zennia->angle -= _cameraSpeed.y;
+                _raistlin->angle -= _cameraSpeed.y;
             else if (heroToggle == 1)
                 _jammss->angle -= _cameraSpeed.y;
             else if (heroToggle == 2)
                 _plane->rotate(0.1);
+            else if (heroToggle == 3) {
+                _bingusTwo->turn(true);
+                _bingusTwo->setMoving(true);
+            }
             fixCamera();
         }
         if (cameraToggle == 1) {
@@ -635,6 +657,9 @@ void FPEngine::_updateScene()
                 _freeCam->moveForward(_cameraSpeed.x);
             }
         }
+    }
+    if(not _keys[GLFW_KEY_W] and not _keys[GLFW_KEY_S] and not _keys[GLFW_KEY_A] and not _keys[GLFW_KEY_D]) {
+        _bingusTwo->setMoving(false);
     }
 
     glm::vec3 pointLightColor =
@@ -695,13 +720,13 @@ void FPEngine::fixCamera()
     _freeCam->recomputeOrientation();
     if (heroToggle == 0) {
         if (cameraToggle == 0) {
-            _freeCam->setPosition(glm::vec3(_zennia->x, 0, _zennia->y) +
+            _freeCam->setPosition(glm::vec3(_raistlin->x, 0, _raistlin->y) +
                                   zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
         }
         if (cameraToggle == 2) {
-            _freeCam->setPosition(glm::vec3(_zennia->x, 1.0, _zennia->y));
+            _freeCam->setPosition(glm::vec3(_raistlin->x, 1.0, _raistlin->y));
             _freeCam->setPhi(M_PI / 2);
-            _freeCam->setTheta(_zennia->angle + M_PI/2);
+            _freeCam->setTheta(_raistlin->angle + M_PI/2);
         }
 
     } else if (heroToggle == 1){
@@ -725,6 +750,16 @@ void FPEngine::fixCamera()
             _freeCam->setPosition(glm::vec3(_plane->getPosition().x, _plane->getPosition().y + 1.0f, _plane->getPosition().z));
             _freeCam->setPhi(M_PI/2);
             _freeCam->setTheta(-_plane->getOrientation().theta + M_PI/2);
+        }
+    } else if (heroToggle == 3) {
+        if (cameraToggle == 0) {
+            _freeCam->setPosition(
+                    _bingusTwo->getPosition() + zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
+        }
+        if (cameraToggle == 2) {
+            _freeCam->setPosition(glm::vec3(_bingusTwo->getPosition().x, _bingusTwo->getPosition().y + 3.0, _bingusTwo->getPosition().z));
+            _freeCam->setPhi(M_PI / 2);
+            _freeCam->setTheta(-(_bingusTwo->_rotation - M_PI / 2));
         }
     }
     _freeCam->recomputeOrientation();
@@ -764,11 +799,13 @@ void FPEngine::run()
         //draw minimap
         glViewport(0, 0, framebufferWidth / 3, framebufferHeight / 3);
         if (heroToggle == 0)
-            _renderScene(glm::lookAt(glm::vec3(_zennia->x, 10, _zennia->y), glm::vec3(_zennia->x, 0, _zennia->y), glm::vec3(1, 0, 0)), projectionMatrix);
+            _renderScene(glm::lookAt(glm::vec3(_raistlin->x, 10, _raistlin->y), glm::vec3(_raistlin->x, 0, _raistlin->y), glm::vec3(1, 0, 0)), projectionMatrix);
         else if (heroToggle == 1)
             _renderScene(glm::lookAt(glm::vec3(_jammss->x, 10, _jammss->y), glm::vec3(_jammss->x, 0, _jammss->y), glm::vec3(1, 0, 0)), projectionMatrix);
         else if (heroToggle == 2)
             _renderScene(glm::lookAt(glm::vec3(_plane->getPosition().x, 10, _plane->getPosition().y), glm::vec3(_plane->getPosition().x, 0, _plane->getPosition().y), glm::vec3(1, 0, 0)), projectionMatrix);
+        else if (heroToggle == 3)
+            _renderScene(glm::lookAt(_bingusTwo->getPosition() + glm::vec3(0, 10, 0), _bingusTwo->getPosition(), glm::vec3(1, 0, 0)), projectionMatrix);
         _updateScene();
 
         glfwSwapBuffers(_window); // flush the OpenGL commands and make sure they get rendered!

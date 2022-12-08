@@ -210,10 +210,10 @@ namespace Engine
         MyReadFile.close();
 
         auto data = new MeshData{
-            points,
-            point_normals,
-            point_coords,
-            indices};
+                points,
+                point_normals,
+                point_coords,
+                indices};
         return data;
     }
 
@@ -244,20 +244,20 @@ namespace Engine
         }
 
         std::vector<GLuint> ibo_sizes;
-        
+
         for(int i = 0; i < meshes.indicies.size(); i++)
         {
             ibo_sizes.push_back(meshes.indicies[i].size());
         }
 
         return BufferData
-        {
-            vao,
-            vbo,
-            ibos,
-            (GLuint) meshes.points.size(),
-            ibo_sizes,
-        };
+                {
+                        vao,
+                        vbo,
+                        ibos,
+                        (GLuint) meshes.points.size(),
+                        ibo_sizes,
+                };
     }
 }
 
