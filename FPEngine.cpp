@@ -62,11 +62,13 @@ void FPEngine::handleKeyEvent(GLint key, GLint action)
                 cameraToggle = 2;
             else
                 cameraToggle = 0;
+            fixCamera();
             break;
         case GLFW_KEY_X: // switch heroes
             heroToggle++;
             if (heroToggle == 3)
                 heroToggle = 0;
+            fixCamera();
             break;
         case GLFW_KEY_Q:
         case GLFW_KEY_ESCAPE:
@@ -458,11 +460,11 @@ void FPEngine::_renderScene(glm::mat4 viewMtx, glm::mat4 projMtx) const
 
     glm::mat4 modelMtx(1.0f);
     // don't draw the character in first person
-    if (heroToggle == 0 || cameraToggle != 2)
+    if (heroToggle != 0 || cameraToggle != 2)
         _zennia->drawZennia(modelMtx, viewMtx, projMtx);
-    if (heroToggle == 1 || cameraToggle != 2)
+    if (heroToggle != 1 || cameraToggle != 2)
         _jammss->drawJammss(modelMtx, viewMtx, projMtx);
-    if (heroToggle == 2 || cameraToggle != 2) {
+    if (heroToggle != 2 || cameraToggle != 2) {
         auto t1 = glm::translate(modelMtx, _plane->getPosition());
         t1 = glm::scale(t1, glm::vec3(3, 3, 3));
         _plane->drawPlane(t1, viewMtx, projMtx);
@@ -623,9 +625,9 @@ void FPEngine::fixCamera()
                     zoom * (_freeCam->getPosition() - _freeCam->getLookAtPoint()));
         }
         if (cameraToggle == 2) {
-            _freeCam->setPosition(glm::vec3(_plane->getPosition().x, 1.0, _plane->getPosition().z));
-            _freeCam->setPhi(_plane->getOrientation().phi);
-            _freeCam->setTheta(_plane->getOrientation().theta);
+            _freeCam->setPosition(glm::vec3(_plane->getPosition().x, _plane->getPosition().y + 1.0f, _plane->getPosition().z));
+            _freeCam->setPhi(M_PI/2);
+            _freeCam->setTheta(-_plane->getOrientation().theta + M_PI/2);
         }
     }
     _freeCam->recomputeOrientation();
